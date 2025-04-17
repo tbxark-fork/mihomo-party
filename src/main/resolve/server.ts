@@ -203,6 +203,22 @@ export async function downloadSubStore(): Promise<void> {
         console.error('substore.downloadFailed:', error)
         throw error
       }
+    } else if (platform() === 'darwin' && !is.dev) {
+      try {
+        const shell = [
+          `cp "${tempBackendPath}" "${backendPath}"`,
+          `rm -rf "${frontendDir}"`,
+          `mkdir -p "${frontendDir}"`,
+          `cp -r "${tempFrontendDir}"/* "${frontendDir}/"`
+        ]
+          .join(' && ')
+          .replace(/"/g, '\\"') // 转义双引号给 AppleScript 用
+        const script = `do shell script "${shell}" with administrator privileges`
+        await execFilePromise('osascript', ['-e', script])
+      } catch (error) {
+        console.error('substore.downloadFailed (macOS):', error)
+        throw error
+      }
     } else {
       await cp(tempBackendPath, backendPath)
       if (existsSync(frontendDir)) {
