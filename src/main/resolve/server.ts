@@ -212,14 +212,12 @@ export async function downloadSubStore(): Promise<void> {
     } else if (platform() === 'darwin' && !is.dev) {
       try {
         const shell = [
-          `cp "${tempBackendPath}" "${backendPath}"`,
-          `rm -rf "${frontendDir}"`,
-          `mkdir -p "${frontendDir}"`,
-          `cp -r "${tempFrontendDir}"/* "${frontendDir}/"`
-        ]
-          .join(' && ')
-          .replace(' ', '\\\\ ') // 转义双引号给 AppleScript 用
-        const script = `do shell script "${shell}" with administrator privileges`
+          `cp '${tempBackendPath}' '${backendPath}'`,
+          `rm -rf '${frontendDir}'`,
+          `mkdir -p '${frontendDir}'`,
+          `cp -r '${tempFrontendDir}'/* '${frontendDir}/'`
+        ].join(' && ')
+        const script = `do shell script "${shell.replace(/'/g, "'\\''")}" with administrator privileges`
         await execFilePromise('osascript', ['-e', script])
       } catch (error) {
         console.error('substore.downloadFailed (macOS):', error)
