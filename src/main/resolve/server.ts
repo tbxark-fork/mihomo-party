@@ -212,12 +212,15 @@ export async function downloadSubStore(): Promise<void> {
     } else if (platform() === 'darwin' && !is.dev) {
       try {
         const shell = [
-          `cp '${tempBackendPath}' '${backendPath}'`,
-          `rm -rf '${frontendDir}'`,
-          `mkdir -p '${frontendDir}'`,
-          `cp -r '${tempFrontendDir}'/* '${frontendDir}/'`
+          // 使用双引号包裹路径，并对所有特殊字符转义
+          `cp "${escapePath(tempBackendPath)}" "${escapePath(backendPath)}"`,
+          `rm -rf "${escapePath(frontendDir)}"`,
+          `mkdir -p "${escapePath(frontendDir)}"`,
+          `cp -r "${escapePath(tempFrontendDir)}"/* "${escapePath(frontendDir)}/"`
         ].join(' && ')
-        const script = `do shell script "${shell.replace(/'/g, "'\\''")}" with administrator privileges`
+
+        const script = `do shell script "${shell.replace(/"/g, '\\"')}" with administrator privileges`
+
         await execFilePromise('osascript', ['-e', script])
       } catch (error) {
         console.error('substore.downloadFailed (macOS):', error)
@@ -236,4 +239,11 @@ export async function downloadSubStore(): Promise<void> {
     console.error('substore.downloadFailed:', error)
     throw error
   }
+}
+function escapePath(path: string): string {
+  return path
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/'/g, "'\\''")
+    .replace(/\s/g, '\\ ')
 }
