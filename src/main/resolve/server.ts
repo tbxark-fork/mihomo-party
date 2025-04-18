@@ -217,7 +217,7 @@ export async function downloadSubStore(): Promise<void> {
           `rm -rf ${frontendDir.replace(' ', '\\\\ ')}`,
           `mkdir -p ${frontendDir.replace(' ', '\\\\ ')}`,
           `cp -r ${tempFrontendDir.replace(' ', '\\\\ ')}/* ${frontendDir.replace(' ', '\\\\ ')}/`
-        ].join(' && ')
+        ].join('\n')
         const script = `do shell script "${shell}" with administrator privileges`
         await execPromise(`osascript -e '${script}'`)
       } catch (error) {
