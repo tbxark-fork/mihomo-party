@@ -18,7 +18,7 @@ import express from 'express'
 import axios from 'axios'
 import AdmZip from 'adm-zip'
 import { promisify } from 'util'
-import { execFile } from 'child_process'
+import { exec, execFile } from 'child_process'
 import { platform } from 'os'
 import { is } from '@electron-toolkit/utils'
 
@@ -154,6 +154,7 @@ export async function downloadSubStore(): Promise<void> {
   const frontendDir = path.join(resourcesFilesDir(), 'sub-store-frontend')
   const backendPath = path.join(resourcesFilesDir(), 'sub-store.bundle.js')
   const tempDir = path.join(dataDir(), 'temp')
+  const execPromise = promisify(exec)
   const execFilePromise = promisify(execFile)
 
   try {
@@ -212,16 +213,13 @@ export async function downloadSubStore(): Promise<void> {
     } else if (platform() === 'darwin' && !is.dev) {
       try {
         const shell = [
-          // 使用双引号包裹路径，并对所有特殊字符转义
-          `cp ${tempBackendPath} ${backendPath}`,
-          `rm -rf ${frontendDir}`,
-          `mkdir -p ${frontendDir}`,
-          `cp -r ${tempFrontendDir}/* ${frontendDir}/`
-        ]
-          .join(' && ')
-          .replace(/ /g, '\\ ')
+          `cp ${tempBackendPath.replace(' ', '\\\\ ')} ${backendPath.replace(' ', '\\\\ ')}`,
+          `rm -rf ${frontendDir.replace(' ', '\\\\ ')}`,
+          `mkdir -p ${frontendDir.replace(' ', '\\\\ ')}`,
+          `cp -r ${tempFrontendDir.replace(' ', '\\\\ ')}/* ${frontendDir.replace(' ', '\\\\ ')}/`
+        ].join(' && ')
         const script = `do shell script "${shell}" with administrator privileges`
-        await execFilePromise('osascript', ['-e', script])
+        await execPromise(`osascript -e '${script}'`)
       } catch (error) {
         console.error('substore.downloadFailed (macOS):', error)
         throw error
