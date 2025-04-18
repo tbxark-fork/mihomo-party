@@ -218,7 +218,7 @@ export async function downloadSubStore(): Promise<void> {
           `cp -r "${tempFrontendDir}"/* "${frontendDir}/"`
         ]
           .join(' && ')
-          .replace(/"/g, '\\"') // 转义双引号给 AppleScript 用
+          .replace(' ', '\\\\ ') // 转义双引号给 AppleScript 用
         const script = `do shell script "${shell}" with administrator privileges`
         await execFilePromise('osascript', ['-e', script])
       } catch (error) {
