@@ -212,14 +212,18 @@ export async function downloadSubStore(): Promise<void> {
       }
     } else if (platform() === 'darwin' && !is.dev) {
       try {
-        const shell = [
-          `cp ${tempBackendPath.replace(' ', '\\\\ ')} ${backendPath.replace(' ', '\\\\ ')}`,
-          `rm -rf ${frontendDir.replace(' ', '\\\\ ')}`,
-          `mkdir -p ${frontendDir.replace(' ', '\\\\ ')}`,
+        const runCommand = async (cmd: string): Promise<void> => {
+          const script = `do shell script "${cmd}" with administrator privileges`
+          await execPromise(`osascript -e '${script}'`)
+        }
+        runCommand(
+          `cp ${tempBackendPath.replace(' ', '\\\\ ')} ${backendPath.replace(' ', '\\\\ ')}`
+        )
+        runCommand(`rm -rf ${frontendDir.replace(' ', '\\\\ ')}`)
+        runCommand(`mkdir -p ${frontendDir.replace(' ', '\\\\ ')}`)
+        runCommand(
           `cp -r ${tempFrontendDir.replace(' ', '\\\\ ')}/* ${frontendDir.replace(' ', '\\\\ ')}/`
-        ].join('\n')
-        const script = `do shell script "${shell}" with administrator privileges`
-        await execPromise(`osascript -e '${script}'`)
+        )
       } catch (error) {
         console.error('substore.downloadFailed (macOS):', error)
         throw error
