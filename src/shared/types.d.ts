@@ -274,6 +274,14 @@ interface ITrayTrafficStyle {
   textColor: string
 }
 
+type SmartModelVariant = 'standard' | 'middle' | 'large'
+
+interface ISmartModelStatus {
+  state: 'missing' | 'damaged' | 'ready'
+  size: number
+  modified?: number
+}
+
 interface IAppConfig {
   core: 'mihomo' | 'mihomo-alpha' | 'mihomo-smart' | 'mihomo-specific'
   specificVersion?: string
