@@ -85,7 +85,9 @@ const execFilePromise = promisify(execFile)
 const ctlParam = process.platform === 'win32' ? '-ext-ctl-pipe' : '-ext-ctl-unix'
 const coreHookTimeout = 30000
 const automaticRestartDelay = 750
-const coreShutdownTimeout = 500
+// macOS 释放 utun 通常需要 1-2 秒；等待 3 秒后再升级为 SIGKILL，
+// 避免新核心启动时旧核心仍占用虚拟网卡。
+const coreShutdownTimeout = 3000
 const resumeReloadDelay = 5000
 // 同一次失败内核可能连打多行，10 秒内只提示一次，避免弹窗刷屏
 const tunFailureReportInterval = 10000
@@ -846,7 +848,16 @@ async function stopCoreInternal(force = false, cancelStartup = true): Promise<vo
     }
   }
 
-  stopCoreProcessAndStreams(cancelStartup)
+  const stoppedChild = stopCoreProcessAndStreams(cancelStartup)
+
+  try {
+    await ensureCoreProcessExited(stoppedChild)
+  } catch (error) {
+    managerLogger.error(
+      `Core PID ${stoppedChild?.pid ?? 'unknown'} refused to exit within ${coreShutdownTimeout}ms`,
+      error
+    )
+  }
 
   await cleanupStoppedCoreResources()
 }
@@ -862,7 +873,11 @@ function stopCoreProcessAndStreams(
   const stoppedChild = child
   if (child) {
     child.removeAllListeners()
-    child.kill('SIGINT')
+    try {
+      child.kill('SIGINT')
+    } catch (error) {
+      managerLogger.warn(`Failed to send SIGINT to core PID ${child.pid ?? 'unknown'}`, error)
+    }
     child = null
   }
 
@@ -933,9 +948,7 @@ async function ensureCoreProcessExited(proc: ChildProcess | null): Promise<void>
 
 async function restartCoreOnce(forceStop: boolean): Promise<void> {
   const startAttempt = await runCoreOperation(async () => {
-    const previousChild = child
     await stopCoreInternal(forceStop)
-    if (process.platform === 'darwin') await ensureCoreProcessExited(previousChild)
     return startCoreInternal(false, true)
   })
   await startAttempt.readiness
