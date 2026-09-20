@@ -414,9 +414,10 @@ jobs:
             exit 1
           fi
           echo "Signing identity: $identity"
+          signing_name="${identity#Developer ID Application: }"
           {
             echo "CSC_KEYCHAIN=$keychain"
-            echo "CSC_NAME=$identity"
+            echo "CSC_NAME=$signing_name"
           } >> "$GITHUB_ENV"
       - name: Build
         env:
@@ -551,9 +552,10 @@ jobs:
             exit 1
           fi
           echo "Signing identity: $identity"
+          signing_name="${identity#Developer ID Application: }"
           {
             echo "CSC_KEYCHAIN=$keychain"
-            echo "CSC_NAME=$identity"
+            echo "CSC_NAME=$signing_name"
           } >> "$GITHUB_ENV"
       - name: Build
         env:
