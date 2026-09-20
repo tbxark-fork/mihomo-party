@@ -3,13 +3,15 @@ import { toast } from '@renderer/components/base/toast'
 import BorderSwitch from '@renderer/components/base/border-switch'
 import { RiScan2Fill } from 'react-icons/ri'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { mihomoHotReloadConfig } from '@renderer/utils/ipc'
+import { mihomoHotReloadConfig, patchControledMihomoConfig } from '@renderer/utils/ipc'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { DEFAULT_CONTROL_SNIFF } from '../../../../shared/appConfig'
+import useSWR from 'swr'
+import { getSimpleConfig } from '@renderer/utils/ipc'
 
 interface Props {
   iconOnly?: boolean
@@ -17,11 +19,16 @@ interface Props {
 const SniffCard: React.FC<Props> = (props) => {
   const { t } = useTranslation()
   const { appConfig, patchAppConfig } = useAppConfig()
+  const { data: simpleState, mutate: mutateSimpleState } = useSWR(
+    appConfig?.operationMode === 'simple' ? 'getSimpleConfig' : null,
+    getSimpleConfig
+  )
   const { iconOnly } = props
   const {
     sniffCardStatus = 'col-span-1',
     controlSniff = DEFAULT_CONTROL_SNIFF,
-    disableAnimations = false
+    disableAnimations = false,
+    operationMode = 'standard'
   } = appConfig || {}
   const location = useLocation()
   const navigate = useNavigate()
@@ -37,8 +44,16 @@ const SniffCard: React.FC<Props> = (props) => {
     id: 'sniff'
   })
   const transform = tf ? { x: tf.x, y: tf.y, scaleX: 1, scaleY: 1 } : null
+  const simpleSnifferEnabled = simpleState
+    ? !/^enable:\s*false\s*$/m.test(simpleState.published.modules.sniffer || '')
+    : false
   const onChange = async (controlSniff: boolean): Promise<void> => {
     try {
+      if (operationMode === 'simple') {
+        await patchControledMihomoConfig({ sniffer: { enable: controlSniff } })
+        await mutateSimpleState()
+        return
+      }
       await patchAppConfig({ controlSniff })
       await mihomoHotReloadConfig()
     } catch (e) {
@@ -49,7 +64,10 @@ const SniffCard: React.FC<Props> = (props) => {
   if (iconOnly) {
     return (
       <div className={`${sniffCardStatus} flex justify-center`}>
-        <Tooltip content={t('sider.cards.sniff')} placement="right">
+        <Tooltip
+          content={operationMode === 'simple' ? '嗅探' : t('sider.cards.sniff')}
+          placement="right"
+        >
           <Button
             size="sm"
             isIconOnly
@@ -97,8 +115,10 @@ const SniffCard: React.FC<Props> = (props) => {
               />
             </Button>
             <BorderSwitch
-              isShowBorder={match && controlSniff}
-              isSelected={controlSniff}
+              isShowBorder={
+                match && (operationMode === 'simple' ? simpleSnifferEnabled : controlSniff)
+              }
+              isSelected={operationMode === 'simple' ? simpleSnifferEnabled : controlSniff}
               onValueChange={onChange}
             />
           </div>
@@ -107,7 +127,7 @@ const SniffCard: React.FC<Props> = (props) => {
           <h3
             className={`text-md font-bold text-ellipsis whitespace-nowrap overflow-hidden ${match ? 'text-primary-foreground' : 'text-foreground'}`}
           >
-            {t('sider.cards.sniff')}
+            {operationMode === 'simple' ? '嗅探' : t('sider.cards.sniff')}
           </h3>
         </CardFooter>
       </Card>

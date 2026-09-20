@@ -440,7 +440,8 @@ export const mihomoHotReloadConfig = async (): Promise<void> => {
   // 否则界面上改动的 Smart 选项会沿用旧脚本，要等到下次重启内核才生效
   await manageSmartOverride()
   const { profileId: current, dnsGuard } = await generateProfile()
-  const { diffWorkDir = false } = await getAppConfig()
+  const appConfig = await getAppConfig()
+  const diffWorkDir = appConfig.operationMode === 'simple' ? false : appConfig.diffWorkDir === true
   const configPath = diffWorkDir ? mihomoWorkConfigPath(current) : mihomoWorkConfigPath('work')
   mihomoApiLogger.info(`hot reload config path: ${configPath}`)
   const instance = await getAxios()

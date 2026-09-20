@@ -13,22 +13,31 @@ import {
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
-  DropdownItem
+  DropdownItem,
+  Tabs,
+  Tab
 } from '@heroui/react'
 import { toast } from '@renderer/components/base/toast'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useOverrideConfig } from '@renderer/hooks/use-override-config'
+import { useAppConfig } from '@renderer/hooks/use-app-config'
+import { useProfileConfig } from '@renderer/hooks/use-profile-config'
+import { useSWRConfig } from 'swr'
 import {
   mihomoHotReloadConfig,
   addProfileUpdater,
   getFilePath,
-  readTextFile
+  readTextFile,
+  getSimpleConfig,
+  addProfileItem as importProfile,
+  updateProfileItem as saveProfile
 } from '@renderer/utils/ipc'
 import { MdDeleteForever } from 'react-icons/md'
 import { FaPlus } from 'react-icons/fa6'
 import { useTranslation } from 'react-i18next'
 import { isValidCron } from 'cron-validator'
 import SettingItem from '../base/base-setting-item'
+import type { SimpleSubscriptionOptions } from '../../../../shared/simple-config'
 
 interface Props {
   item: IProfileItem
@@ -39,6 +48,15 @@ interface Props {
 }
 const EditInfoModal: React.FC<Props> = (props) => {
   const { item, mode = 'edit', updateProfileItem, addProfileItem, onClose } = props
+  const { appConfig } = useAppConfig()
+  const simpleMode = appConfig?.operationMode === 'simple'
+  const { mutateProfileConfig } = useProfileConfig()
+  const { mutate } = useSWRConfig()
+  const [simpleOptions, setSimpleOptions] = useState<SimpleSubscriptionOptions>({
+    mode: 'group'
+  })
+  const [optionsLoaded, setOptionsLoaded] = useState(false)
+  const [saving, setSaving] = useState(false)
   const { overrideConfig } = useOverrideConfig()
   const { items: overrideItems = [] } = overrideConfig || {}
   const [values, setValues] = useState({
@@ -47,19 +65,53 @@ const EditInfoModal: React.FC<Props> = (props) => {
   const inputWidth = 'w-[400px] md:w-[400px] lg:w-[600px] xl:w-[800px]'
   const { t } = useTranslation()
   const isImportMode = mode === 'import'
+  useEffect(() => {
+    if (!simpleMode || isImportMode) return
+    let active = true
+    getSimpleConfig()
+      .then((state) => {
+        if (!active) return
+        const source = state.draft.sources.find((source) => source.profileId === item.id)
+        setSimpleOptions({
+          mode: source?.mode === 'extract' ? 'nodes' : 'group',
+          prefix: source?.prefix,
+          providerName: source?.name
+        })
+        setOptionsLoaded(true)
+      })
+      .catch((error) => {
+        if (active) toast.error(String(error))
+      })
+    return () => {
+      active = false
+    }
+  }, [simpleMode, isImportMode, item.id])
   const canSave =
-    !isImportMode || (values.type === 'remote' ? Boolean(values.url?.trim()) : values.file != null)
+    (!simpleMode || isImportMode || optionsLoaded) &&
+    (!isImportMode ||
+      (values.type === 'remote' ? Boolean(values.url?.trim()) : values.file != null))
 
   const onSave = async (): Promise<void> => {
+    setSaving(true)
     try {
-      const updatedItem = {
-        ...values,
-        override: values.override?.filter(
-          (i) =>
-            overrideItems.find((t) => t.id === i) && !overrideItems.find((t) => t.id === i)?.global
-        )
-      }
-      if (isImportMode) {
+      const updatedItem = simpleMode
+        ? values
+        : {
+            ...values,
+            override: values.override?.filter(
+              (i) =>
+                overrideItems.find((t) => t.id === i) &&
+                !overrideItems.find((t) => t.id === i)?.global
+            )
+          }
+      if (simpleMode) {
+        if (isImportMode) await importProfile(updatedItem, simpleOptions)
+        else {
+          await saveProfile(updatedItem, simpleOptions)
+          await addProfileUpdater(updatedItem)
+        }
+        await mutate('getSimpleConfig')
+      } else if (isImportMode) {
         if (!addProfileItem) throw new Error('Missing profile import handler')
         await addProfileItem(updatedItem)
       } else {
@@ -71,6 +123,9 @@ const EditInfoModal: React.FC<Props> = (props) => {
       onClose()
     } catch (e) {
       toast.error(String(e))
+    } finally {
+      if (simpleMode) mutateProfileConfig()
+      setSaving(false)
     }
   }
 
@@ -136,6 +191,50 @@ const EditInfoModal: React.FC<Props> = (props) => {
               }}
             />
           </SettingItem>
+          {simpleMode && (
+            <>
+              <SettingItem title="导入方式">
+                <Tabs
+                  size="sm"
+                  aria-label="导入方式"
+                  selectedKey={simpleOptions.mode}
+                  onSelectionChange={(mode) => {
+                    setSimpleOptions({
+                      ...simpleOptions,
+                      mode: mode as SimpleSubscriptionOptions['mode']
+                    })
+                  }}
+                >
+                  <Tab key="group" title="整份订阅" />
+                  <Tab key="nodes" title="独立节点" />
+                </Tabs>
+              </SettingItem>
+              {simpleOptions.mode === 'group' && (
+                <SettingItem title="引用名称">
+                  <Input
+                    size="sm"
+                    className={cn(inputWidth)}
+                    value={simpleOptions.providerName ?? ''}
+                    placeholder={values.name}
+                    onValueChange={(providerName) =>
+                      setSimpleOptions({ ...simpleOptions, providerName })
+                    }
+                  />
+                </SettingItem>
+              )}
+              <SettingItem title="节点前缀">
+                <Input
+                  size="sm"
+                  className={cn(inputWidth)}
+                  value={
+                    simpleOptions.prefix ??
+                    `[${simpleOptions.providerName || values.name || '订阅'}] `
+                  }
+                  onValueChange={(prefix) => setSimpleOptions({ ...simpleOptions, prefix })}
+                />
+              </SettingItem>
+            </>
+          )}
           <SettingItem title={t('profiles.editInfo.ageSecretKey')}>
             <Input
               size="sm"
@@ -304,74 +403,82 @@ const EditInfoModal: React.FC<Props> = (props) => {
               </SettingItem>
             </>
           )}
-          <SettingItem title={t('profiles.editInfo.override.title')}>
-            <div>
-              {overrideItems
-                .filter((i) => i.global)
-                .map((i) => {
+          {!simpleMode && (
+            <SettingItem title={t('profiles.editInfo.override.title')}>
+              <div>
+                {overrideItems
+                  .filter((i) => i.global)
+                  .map((i) => {
+                    return (
+                      <div className="flex mb-2" key={i.id}>
+                        <Button disabled fullWidth variant="flat" size="sm">
+                          {i.name} ({t('profiles.editInfo.override.global')})
+                        </Button>
+                      </div>
+                    )
+                  })}
+                {values.override?.map((i) => {
+                  if (!overrideItems.find((t) => t.id === i)) return null
+                  if (overrideItems.find((t) => t.id === i)?.global) return null
                   return (
-                    <div className="flex mb-2" key={i.id}>
+                    <div className="flex mb-2" key={i}>
                       <Button disabled fullWidth variant="flat" size="sm">
-                        {i.name} ({t('profiles.editInfo.override.global')})
+                        {overrideItems.find((t) => t.id === i)?.name}
+                      </Button>
+                      <Button
+                        color="warning"
+                        variant="flat"
+                        className="ml-2"
+                        size="sm"
+                        onPress={() => {
+                          setValues({
+                            ...values,
+                            override: values.override?.filter((t) => t !== i)
+                          })
+                        }}
+                      >
+                        <MdDeleteForever className="text-lg" />
                       </Button>
                     </div>
                   )
                 })}
-              {values.override?.map((i) => {
-                if (!overrideItems.find((t) => t.id === i)) return null
-                if (overrideItems.find((t) => t.id === i)?.global) return null
-                return (
-                  <div className="flex mb-2" key={i}>
-                    <Button disabled fullWidth variant="flat" size="sm">
-                      {overrideItems.find((t) => t.id === i)?.name}
+                <Dropdown>
+                  <DropdownTrigger>
+                    <Button fullWidth size="sm" variant="flat" color="default">
+                      <FaPlus />
                     </Button>
-                    <Button
-                      color="warning"
-                      variant="flat"
-                      className="ml-2"
-                      size="sm"
-                      onPress={() => {
-                        setValues({
-                          ...values,
-                          override: values.override?.filter((t) => t !== i)
-                        })
-                      }}
-                    >
-                      <MdDeleteForever className="text-lg" />
-                    </Button>
-                  </div>
-                )
-              })}
-              <Dropdown>
-                <DropdownTrigger>
-                  <Button fullWidth size="sm" variant="flat" color="default">
-                    <FaPlus />
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu
-                  emptyContent={t('profiles.editInfo.override.noAvailable')}
-                  onAction={(key) => {
-                    setValues({
-                      ...values,
-                      override: Array.from(values.override || []).concat(key.toString())
-                    })
-                  }}
-                >
-                  {overrideItems
-                    .filter((i) => !values.override?.includes(i.id) && !i.global)
-                    .map((i) => (
-                      <DropdownItem key={i.id}>{i.name}</DropdownItem>
-                    ))}
-                </DropdownMenu>
-              </Dropdown>
-            </div>
-          </SettingItem>
+                  </DropdownTrigger>
+                  <DropdownMenu
+                    emptyContent={t('profiles.editInfo.override.noAvailable')}
+                    onAction={(key) => {
+                      setValues({
+                        ...values,
+                        override: Array.from(values.override || []).concat(key.toString())
+                      })
+                    }}
+                  >
+                    {overrideItems
+                      .filter((i) => !values.override?.includes(i.id) && !i.global)
+                      .map((i) => (
+                        <DropdownItem key={i.id}>{i.name}</DropdownItem>
+                      ))}
+                  </DropdownMenu>
+                </Dropdown>
+              </div>
+            </SettingItem>
+          )}
         </ModalBody>
         <ModalFooter>
           <Button size="sm" variant="light" onPress={onClose}>
             {t('common.cancel')}
           </Button>
-          <Button size="sm" color="primary" isDisabled={!canSave} onPress={onSave}>
+          <Button
+            size="sm"
+            color="primary"
+            isDisabled={!canSave || saving}
+            isLoading={saving}
+            onPress={onSave}
+          >
             {isImportMode ? t('profiles.import') : t('common.save')}
           </Button>
         </ModalFooter>

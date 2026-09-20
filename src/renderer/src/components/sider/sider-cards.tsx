@@ -87,7 +87,10 @@ const SiderCards = (props: Props): React.JSX.Element => {
         return
       }
     }
-    const dest = SIDER_CARD_ROUTES[activeId]
+    const dest =
+      activeId === 'profile' && appConfig?.operationMode === 'simple'
+        ? '/simple'
+        : SIDER_CARD_ROUTES[activeId]
     if (dest) navigate(dest)
   }
 
@@ -101,10 +104,12 @@ const SiderCards = (props: Props): React.JSX.Element => {
     return closestCorners(args)
   }
 
-  const cards = order.map((key) => {
-    const Component = componentMap[key]
-    return <Component key={key} iconOnly={iconOnly} />
-  })
+  const cards = order
+    .filter((key) => appConfig?.operationMode !== 'simple' || key !== 'override')
+    .map((key) => {
+      const Component = componentMap[key]
+      return <Component key={key} iconOnly={iconOnly} />
+    })
 
   if (iconOnly) {
     return (

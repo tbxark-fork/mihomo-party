@@ -17,6 +17,7 @@ import {
 } from '../../shared/appConfig'
 
 export const defaultConfig: IAppConfig = {
+  modeSelected: false,
   core: 'mihomo',
   enableSmartCore: false,
   enableSmartOverride: true,

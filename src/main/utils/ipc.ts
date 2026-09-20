@@ -149,6 +149,25 @@ import { logDir, rulePath } from './dirs'
 import { installMihomoCore, getGitHubTags, clearVersionCache } from './github'
 import { atomicWriteFile } from './safeFile'
 import { startSubStoreServices } from './init'
+import {
+  getSimpleConfig,
+  getSimpleProxyGroup,
+  getSimpleRulesEditor,
+  saveSimpleRules,
+  saveSimpleRuleProvider,
+  createSimpleProxyGroup,
+  saveSimpleProxyGroup,
+  removeSimpleProxyGroup,
+  reorderSimpleProxyGroups,
+  saveSimpleDraft,
+  previewSimpleConfig,
+  publishSimpleConfig,
+  exportSimpleConfig,
+  importSimpleSubscription,
+  refreshSimpleSource,
+  removeSimpleSource
+} from '../simple/service'
+import { setOperationMode } from '../simple/mode'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AsyncFn = (...args: any[]) => Promise<any>
@@ -307,6 +326,23 @@ const asyncHandlers: Record<string, AsyncFn> = {
   getSmartOverrideContent,
   getRuleStr,
   setRuleStr,
+  getSimpleConfig,
+  getSimpleProxyGroup,
+  getSimpleRulesEditor,
+  saveSimpleRules,
+  saveSimpleRuleProvider,
+  createSimpleProxyGroup,
+  saveSimpleProxyGroup,
+  removeSimpleProxyGroup,
+  reorderSimpleProxyGroups,
+  saveSimpleDraft,
+  previewSimpleConfig,
+  publishSimpleConfig,
+  exportSimpleConfig,
+  importSimpleSubscription,
+  refreshSimpleSource,
+  removeSimpleSource,
+  setOperationMode,
   readTextFile,
   // Core
   restartCore,

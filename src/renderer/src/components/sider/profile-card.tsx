@@ -13,6 +13,8 @@ import React, { lazy, Suspense, useState } from 'react'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { TiFolder } from 'react-icons/ti'
 import { useTranslation } from 'react-i18next'
+import useSWR from 'swr'
+import { getSimpleConfig } from '@renderer/utils/ipc'
 
 const ConfigViewer = lazy(() => import('./config-viewer'))
 
@@ -34,11 +36,18 @@ const ProfileCard: React.FC<Props> = (props) => {
   } = appConfig || {}
   const location = useLocation()
   const navigate = useNavigate()
-  const match = location.pathname.includes('/profiles')
+  const simpleMode = appConfig?.operationMode === 'simple'
+  const match = simpleMode
+    ? location.pathname === '/simple'
+    : location.pathname.includes('/profiles')
   const [updating, setUpdating] = useState(false)
   const [showRuntimeConfig, setShowRuntimeConfig] = useState(false)
   const { profileConfig, addProfileItem } = useProfileConfig()
+  useSWR(simpleMode ? 'getSimpleConfig' : null, simpleMode ? getSimpleConfig : null)
   const { current, items } = profileConfig ?? {}
+  const remoteCount = items?.filter((item) => item.type === 'remote').length ?? 0
+  const localCount = items?.filter((item) => item.type === 'local').length ?? 0
+  const pluginCount = items?.filter((item) => item.type === 'plugin').length ?? 0
   const {
     attributes,
     listeners,
@@ -63,14 +72,14 @@ const ProfileCard: React.FC<Props> = (props) => {
   if (iconOnly) {
     return (
       <div className={`${profileCardStatus} flex justify-center`}>
-        <Tooltip content={t('sider.cards.profiles')} placement="right">
+        <Tooltip content={simpleMode ? '订阅管理' : t('sider.cards.profiles')} placement="right">
           <Button
             size="sm"
             isIconOnly
             color={match ? 'primary' : 'default'}
             variant={match ? 'solid' : 'light'}
             onPress={() => {
-              navigate('/profiles')
+              navigate(simpleMode ? '/simple' : '/profiles')
             }}
           >
             <TiFolder className="text-[20px]" />
@@ -95,7 +104,7 @@ const ProfileCard: React.FC<Props> = (props) => {
           <ConfigViewer onClose={() => setShowRuntimeConfig(false)} />
         </Suspense>
       )}
-      {profileCardStatus === 'col-span-2' ? (
+      {!simpleMode && profileCardStatus === 'col-span-2' ? (
         <Card
           fullWidth
           ref={setNodeRef}
@@ -224,6 +233,50 @@ const ProfileCard: React.FC<Props> = (props) => {
             )}
           </CardFooter>
         </Card>
+      ) : simpleMode ? (
+        <Card
+          fullWidth
+          ref={setNodeRef}
+          {...attributes}
+          {...listeners}
+          className={`${match ? 'bg-primary' : 'hover:bg-primary/30'} ${disableAnimations ? '' : `motion-reduce:transition-transform-background ${isDragging ? 'scale-[0.95] tap-highlight-transparent' : ''}`}`}
+        >
+          <CardBody>
+            <div className="flex justify-between h-8">
+              <h3
+                className={`text-ellipsis whitespace-nowrap overflow-hidden text-md font-bold leading-8 ${match ? 'text-primary-foreground' : 'text-foreground'}`}
+              >
+                共 {items?.length ?? 0} 个订阅
+              </h3>
+              <Button
+                isIconOnly
+                size="sm"
+                title={t('sider.cards.viewRuntimeConfig')}
+                variant="light"
+                color="default"
+                onPress={() => {
+                  setShowRuntimeConfig(true)
+                }}
+              >
+                <CgLoadbarDoc
+                  className={`text-[24px] ${match ? 'text-primary-foreground' : 'text-foreground'}`}
+                />
+              </Button>
+            </div>
+          </CardBody>
+          <CardFooter className="pt-1">
+            <div
+              title={`共 ${items?.length ?? 0} 个订阅，远程 ${remoteCount}，本地 ${localCount}${pluginCount > 0 ? `，插件 ${pluginCount}` : ''}`}
+              className={`flex w-full min-w-0 items-center justify-between gap-2 ${match ? 'text-primary-foreground' : 'text-foreground'}`}
+            >
+              <h4 className="shrink-0 text-md font-bold">订阅管理</h4>
+              <span className="truncate text-xs">
+                远程 {remoteCount} / 本地 {localCount}
+                {pluginCount > 0 && ` / 插件 ${pluginCount}`}
+              </span>
+            </div>
+          </CardFooter>
+        </Card>
       ) : (
         <Card
           fullWidth
@@ -251,7 +304,7 @@ const ProfileCard: React.FC<Props> = (props) => {
             <h3
               className={`text-md font-bold sider-card-title ${match ? 'text-primary-foreground' : 'text-foreground'}`}
             >
-              {t('sider.cards.profiles')}
+              {simpleMode ? '订阅管理' : t('sider.cards.profiles')}
             </h3>
           </CardFooter>
         </Card>

@@ -283,6 +283,8 @@ interface ISmartModelStatus {
 }
 
 interface IAppConfig {
+  operationMode?: 'standard' | 'simple'
+  modeSelected?: boolean
   core: 'mihomo' | 'mihomo-alpha' | 'mihomo-smart' | 'mihomo-specific'
   specificVersion?: string
   enableSmartCore: boolean

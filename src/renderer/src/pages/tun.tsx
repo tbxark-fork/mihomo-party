@@ -100,7 +100,7 @@ const Tun: React.FC = () => {
     }
     try {
       await patchControledMihomoConfig({ ...patch, tun: tunPatch })
-      await mihomoHotReloadConfig()
+      if (appConfig?.operationMode !== 'simple') await mihomoHotReloadConfig()
     } catch (e) {
       showErrorSync(e, t('common.error.updateCoreConfigFailed'))
     } finally {

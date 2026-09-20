@@ -60,6 +60,7 @@ const Profiles: React.FC = () => {
     mutateProfileConfig
   } = useProfileConfig()
   const { appConfig } = useAppConfig()
+  const simpleMode = appConfig?.operationMode === 'simple'
   const {
     useSubStore = DEFAULT_USE_SUB_STORE,
     useCustomSubStore = false,
@@ -585,15 +586,19 @@ const Profiles: React.FC = () => {
             {sortedItems.map((item) => (
               <ProfileItem
                 key={item.id}
-                isCurrent={item.id === current}
+                isCurrent={!simpleMode && item.id === current}
                 addProfileItem={addProfileItem}
                 removeProfileItem={removeProfileItem}
                 mutateProfileConfig={mutateProfileConfig}
                 updateProfileItem={updateProfileItem}
                 info={item}
-                onPress={async () => {
-                  await changeCurrentProfile(item.id)
-                }}
+                onPress={
+                  simpleMode
+                    ? undefined
+                    : async () => {
+                        await changeCurrentProfile(item.id)
+                      }
+                }
               />
             ))}
           </SortableContext>

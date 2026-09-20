@@ -2,12 +2,26 @@ import { useTheme } from 'next-themes'
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import { NavigateFunction, useLocation, useNavigate, useRoutes } from 'react-router-dom'
 import OutboundModeSwitcher from '@renderer/components/sider/outbound-mode-switcher'
-import { Button, Divider } from '@heroui/react'
+import {
+  Button,
+  Divider,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader
+} from '@heroui/react'
 import { IoSettings } from 'react-icons/io5'
+import { toast } from '@renderer/components/base/toast'
 import routes, { useDeferredRoutePreload } from '@renderer/routes'
 import UpdaterButton from '@renderer/components/updater/updater-button'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
-import { applyTheme, setNativeTheme, setTitleBarOverlay } from '@renderer/utils/ipc'
+import {
+  applyTheme,
+  setNativeTheme,
+  setOperationMode,
+  setTitleBarOverlay
+} from '@renderer/utils/ipc'
 import { platform } from '@renderer/utils/init'
 import { TitleBarOverlayOptions } from 'electron'
 import { useTrafficLogger } from '@renderer/hooks/use-traffic-logger'
@@ -25,6 +39,49 @@ export { getDriver }
 
 const siderCardsPromise = import('@renderer/components/sider/sider-cards')
 const SiderCards = lazy(() => siderCardsPromise)
+/* eslint-disable react/prop-types */
+
+const ModeSelection: React.FC<{ onSelect: (mode: 'standard' | 'simple') => Promise<void> }> = ({
+  onSelect
+}) => (
+  <Modal isOpen hideCloseButton isDismissable={false}>
+    <ModalContent>
+      {(close) => (
+        <>
+          <ModalHeader>选择配置模式</ModalHeader>
+          <ModalBody>
+            <p className="text-small text-default-500">
+              首次启动请选择配置方式。之后可在页面中切换，两个模式的数据互相独立。
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="flat"
+                onPress={() => {
+                  void onSelect('standard')
+                    .then(close)
+                    .catch((error) => toast.error(String(error)))
+                }}
+              >
+                标准模式<div className="text-tiny">配置 → 覆写 → 客户端覆写</div>
+              </Button>
+              <Button
+                color="primary"
+                onPress={() => {
+                  void onSelect('simple')
+                    .then(close)
+                    .catch((error) => toast.error(String(error)))
+                }}
+              >
+                简易模式<div className="text-tiny">模块化编辑并合并最终配置</div>
+              </Button>
+            </div>
+          </ModalBody>
+          <ModalFooter />
+        </>
+      )}
+    </ModalContent>
+  </Modal>
+)
 
 const FirstContentReady: React.FC = () => {
   const { appConfig } = useAppConfig()
@@ -144,6 +201,16 @@ const App: React.FC = () => {
     window.addEventListener('mouseup', onResizeEnd)
     return (): void => window.removeEventListener('mouseup', onResizeEnd)
   }, [onResizeEnd])
+
+  if (hasAppConfig && !appConfig?.modeSelected) {
+    return (
+      <ModeSelection
+        onSelect={async (mode) => {
+          await setOperationMode(mode)
+        }}
+      />
+    )
+  }
 
   return (
     <div
