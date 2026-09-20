@@ -3,15 +3,18 @@ import { toast } from '@renderer/components/base/toast'
 import BorderSwitch from '@renderer/components/base/border-switch'
 import { RiScan2Fill } from 'react-icons/ri'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { mihomoHotReloadConfig, patchControledMihomoConfig } from '@renderer/utils/ipc'
+import {
+  mihomoHotReloadConfig,
+  patchControledMihomoConfig,
+  getSimpleConfig
+} from '@renderer/utils/ipc'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { DEFAULT_CONTROL_SNIFF } from '../../../../shared/appConfig'
 import useSWR from 'swr'
-import { getSimpleConfig } from '@renderer/utils/ipc'
+import { DEFAULT_CONTROL_SNIFF } from '../../../../shared/appConfig'
 
 interface Props {
   iconOnly?: boolean

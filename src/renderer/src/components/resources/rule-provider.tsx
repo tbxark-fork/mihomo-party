@@ -16,14 +16,14 @@ import { MdEdit, MdEditDocument } from 'react-icons/md'
 import dayjs from '@renderer/utils/dayjs'
 import { useTranslation } from 'react-i18next'
 import { includesIgnoreCase } from '@renderer/utils/includes'
-import SettingItem from '../base/base-setting-item'
-import SettingCard from '../base/base-setting-card'
-import Viewer from './viewer'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { FaPlus } from 'react-icons/fa6'
-import RuleProviderEditorModal from './rule-provider-editor-modal'
+import SettingItem from '../base/base-setting-item'
+import SettingCard from '../base/base-setting-card'
 import type { SimpleRuleEditor } from '../../../../shared/simple-config'
 import DeleteResourceButton from '../simple/delete-resource-button'
+import Viewer from './viewer'
+import RuleProviderEditorModal from './rule-provider-editor-modal'
 
 const RuleProvider: React.FC<{ editing?: boolean }> = (props) => {
   const { t } = useTranslation()

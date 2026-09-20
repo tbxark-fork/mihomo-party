@@ -9,9 +9,9 @@ import { deepMerge } from '../utils/merge'
 import { createLogger } from '../utils/logger'
 import { atomicWriteFile, WriteQueue } from '../utils/safeFile'
 import { DEFAULT_CONTROL_DNS, DEFAULT_CONTROL_SNIFF } from '../../shared/appConfig'
-import { getAppConfig, patchAppConfig } from './app'
 import { SIMPLE_SHARED_CONFIG_KEYS } from '../../shared/simple-config'
 import type { SimpleSharedConfig } from '../simple/compiler'
+import { getAppConfig, patchAppConfig } from './app'
 
 const controledMihomoLogger = createLogger('ControledMihomo')
 

@@ -2,6 +2,7 @@ import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { addProfileUpdater } from '../core/profileUpdater'
 import { getOverrideConfig, updateOverrideConfig } from './override'
 import {
   createProfile,
@@ -13,7 +14,6 @@ import {
   upsertPluginProfile,
   syncPluginProfileSchedule
 } from './profile'
-import { addProfileUpdater } from '../core/profileUpdater'
 
 let testDir = ''
 

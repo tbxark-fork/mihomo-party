@@ -1,9 +1,9 @@
 import { Button, Card, CardBody, Chip, Textarea } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
 import { getSimpleConfig, publishSimpleConfig, saveSimpleDraft } from '@renderer/utils/ipc'
+import { useEffect, useState } from 'react'
 import type { SimpleModule, SimpleState } from '../../../../shared/simple-config'
 import { SIMPLE_MODULES } from '../../../../shared/simple-config'
-import { useEffect, useState } from 'react'
 /* eslint-disable react/prop-types */
 
 export const SimpleModuleEditor: React.FC<{ module: SimpleModule; title?: string }> = ({

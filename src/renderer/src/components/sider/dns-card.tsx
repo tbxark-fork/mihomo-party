@@ -4,15 +4,14 @@ import BorderSwitch from '@renderer/components/base/border-switch'
 import BaseConfirmModal from '@renderer/components/base/base-confirm-modal'
 import { LuServer } from 'react-icons/lu'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { patchControledMihomoConfig, setControlDns } from '@renderer/utils/ipc'
+import { patchControledMihomoConfig, setControlDns, getSimpleConfig } from '@renderer/utils/ipc'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DEFAULT_CONTROL_DNS } from '../../../../shared/appConfig'
 import useSWR from 'swr'
-import { getSimpleConfig } from '@renderer/utils/ipc'
+import { DEFAULT_CONTROL_DNS } from '../../../../shared/appConfig'
 
 interface Props {
   iconOnly?: boolean

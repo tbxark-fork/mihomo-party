@@ -141,14 +141,6 @@ import {
   queryTrafficUsageBreakdown,
   queryTrafficUsageOverview
 } from '../traffic/database'
-import { getImageDataURL } from './image'
-import { get as httpGet } from './chromeRequest'
-import { getIconDataURL } from './icon'
-import { getAppName } from './appName'
-import { logDir, rulePath } from './dirs'
-import { installMihomoCore, getGitHubTags, clearVersionCache } from './github'
-import { atomicWriteFile } from './safeFile'
-import { startSubStoreServices } from './init'
 import {
   getSimpleConfig,
   getSimpleProxyGroup,
@@ -168,6 +160,14 @@ import {
   removeSimpleSource
 } from '../simple/service'
 import { setOperationMode } from '../simple/mode'
+import { getImageDataURL } from './image'
+import { get as httpGet } from './chromeRequest'
+import { getIconDataURL } from './icon'
+import { getAppName } from './appName'
+import { logDir, rulePath } from './dirs'
+import { installMihomoCore, getGitHubTags, clearVersionCache } from './github'
+import { atomicWriteFile } from './safeFile'
+import { startSubStoreServices } from './init'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AsyncFn = (...args: any[]) => Promise<any>

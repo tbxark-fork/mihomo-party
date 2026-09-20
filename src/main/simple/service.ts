@@ -1,9 +1,23 @@
+import path from 'path'
 import axios from 'axios'
 import { app, dialog } from 'electron'
-import path from 'path'
 import { parse, stringify } from '../utils/yaml'
 import { atomicWriteFile } from '../utils/safeFile'
 import { deepMerge } from '../utils/merge'
+import {
+  SIMPLE_BUILTIN_OUTBOUNDS,
+  SIMPLE_GENERAL_CONFIG_KEYS,
+  SIMPLE_MODULES,
+  SIMPLE_SHARED_CONFIG_KEYS,
+  type SimpleDraft,
+  type SimplePreview,
+  type SimpleObject,
+  type SimpleProxyGroupEditor,
+  type SimpleRuleChange,
+  type SimpleRuleEditor,
+  type SimpleSource,
+  type SimpleSubscriptionOptions
+} from '../../shared/simple-config'
 import { cleanupSimpleDraft, removedSimpleResources } from './references'
 import {
   getSimpleState,
@@ -28,20 +42,6 @@ import {
   readSimpleRules,
   readSimpleRuleProviders
 } from './rules'
-import {
-  SIMPLE_BUILTIN_OUTBOUNDS,
-  SIMPLE_GENERAL_CONFIG_KEYS,
-  SIMPLE_MODULES,
-  SIMPLE_SHARED_CONFIG_KEYS,
-  type SimpleDraft,
-  type SimplePreview,
-  type SimpleObject,
-  type SimpleProxyGroupEditor,
-  type SimpleRuleChange,
-  type SimpleRuleEditor,
-  type SimpleSource,
-  type SimpleSubscriptionOptions
-} from '../../shared/simple-config'
 
 const sharedModuleNames = ['dns', 'hosts', 'tun', 'sniffer'] as const
 const sharedConfigKeys = new Set<string>(SIMPLE_SHARED_CONFIG_KEYS)

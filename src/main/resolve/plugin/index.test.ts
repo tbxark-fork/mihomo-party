@@ -118,6 +118,7 @@ vi.mock('./gateway', async (importOriginal) => {
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import { createPrivateKey, sign } from 'crypto'
+import { getAppConfig } from '../../config/app'
 import { GatewayError } from './gateway'
 import { buildDiscoverySignInput } from './discovery-sig'
 import { sha256Hex } from './encoding'
@@ -132,7 +133,6 @@ import {
   removePluginForProfile,
   patchPluginItem
 } from './index'
-import { getAppConfig } from '../../config/app'
 
 const CLASH =
   'proxies:\n  - {name: a, type: ss, server: 1.1.1.1, port: 8388, cipher: aes-128-gcm, password: x}\n'

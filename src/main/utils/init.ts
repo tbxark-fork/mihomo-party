@@ -26,6 +26,7 @@ import {
   DEFAULT_MIHOMO_SKIP_AUTH_PREFIXES,
   getDefaultMihomoTunDevice
 } from '../../shared/appConfig'
+import { defaultSimpleDraft } from '../../shared/simple-config'
 import { stringify } from './yaml'
 import {
   defaultConfig,
@@ -49,10 +50,9 @@ import {
   resourcesFilesDir,
   rulesDir,
   subStoreDir,
-  themesDir
+  themesDir,
+  simpleConfigPath
 } from './dirs'
-import { simpleConfigPath } from './dirs'
-import { defaultSimpleDraft } from '../../shared/simple-config'
 import { initLogger } from './logger'
 import { atomicWriteFile } from './safeFile'
 
