@@ -1,4 +1,5 @@
 {
+  "traffic.migration.notice": "Migrating historical traffic statistics. Large datasets may take a few minutes and temporarily increase disk activity. Please wait.",
   "common.settings": "Settings",
   "common.profiles": "Profiles",
   "common.proxies": "Proxies",

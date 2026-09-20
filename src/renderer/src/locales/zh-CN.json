@@ -1,4 +1,5 @@
 {
+  "traffic.migration.notice": "正在迁移历史流量统计，数据较多时可能需要几分钟，期间磁盘占用可能升高，请耐心等待。",
   "common.settings": "设置",
   "common.profiles": "配置",
   "common.proxies": "代理",
