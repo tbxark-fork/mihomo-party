@@ -83,7 +83,7 @@ const MihomoCoreCard: React.FC<Props> = (props) => {
         transition,
         zIndex: isDragging ? 'calc(infinity)' : undefined
       }}
-      className={`${mihomoCoreCardStatus} mihomo-core-card`}
+      className={`${mihomoCoreCardStatus} min-w-0 mihomo-core-card`}
     >
       {mihomoCoreCardStatus === 'col-span-2' ? (
         <Card
@@ -98,10 +98,11 @@ const MihomoCoreCard: React.FC<Props> = (props) => {
               ref={setNodeRef}
               {...attributes}
               {...listeners}
-              className="flex justify-between h-[32px]"
+              className="flex min-w-0 items-center justify-between gap-2 h-[32px]"
             >
               <h3
-                className={`text-md font-bold leading-[32px] ${match ? 'text-primary-foreground' : 'text-foreground'} `}
+                title={version?.version}
+                className={`min-w-0 flex-1 truncate text-md font-bold leading-[32px] ${match ? 'text-primary-foreground' : 'text-foreground'}`}
               >
                 {version?.version ?? '-'}
               </h3>
@@ -111,6 +112,7 @@ const MihomoCoreCard: React.FC<Props> = (props) => {
                 size="sm"
                 variant="light"
                 color="default"
+                className="shrink-0"
                 title={t('mihomo.restart')}
                 disabled={restarting}
                 onPress={async () => {
