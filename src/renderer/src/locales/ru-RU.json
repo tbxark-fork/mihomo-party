@@ -738,6 +738,7 @@
   "connections.detail.inboundIP": "Входящий IP",
   "connections.detail.inboundPort": "Входящий порт",
   "connections.detail.copyRule": "Копировать правило",
+  "connections.detail.addRule": "Добавить правило",
   "connections.detail.inboundName": "Имя входящего",
   "connections.detail.inboundUser": "Пользователь входящего",
   "connections.detail.dscp": "DSCP",

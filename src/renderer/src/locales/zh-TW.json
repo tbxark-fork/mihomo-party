@@ -753,6 +753,7 @@
   "connections.detail.inboundIP": "入站 IP",
   "connections.detail.inboundPort": "入站埠",
   "connections.detail.copyRule": "複製規則",
+  "connections.detail.addRule": "新增規則",
   "connections.detail.inboundName": "入站名稱",
   "connections.detail.inboundUser": "入站用戶",
   "connections.detail.dscp": "DSCP",

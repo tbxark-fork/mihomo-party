@@ -735,6 +735,7 @@
   "connections.detail.inboundIP": "IP ورودی",
   "connections.detail.inboundPort": "پورت ورودی",
   "connections.detail.copyRule": "کپی قانون",
+  "connections.detail.addRule": "افزودن قانون",
   "connections.detail.inboundName": "نام ورودی",
   "connections.detail.inboundUser": "کاربر ورودی",
   "connections.detail.dscp": "DSCP",

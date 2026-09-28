@@ -753,6 +753,7 @@
   "connections.detail.inboundIP": "Inbound IP",
   "connections.detail.inboundPort": "Inbound Port",
   "connections.detail.copyRule": "Copy Rule",
+  "connections.detail.addRule": "Add Rule",
   "connections.detail.inboundName": "Inbound Name",
   "connections.detail.inboundUser": "Inbound User",
   "connections.detail.dscp": "DSCP",
