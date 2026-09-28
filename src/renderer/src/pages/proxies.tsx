@@ -272,6 +272,7 @@ const Proxies: React.FC = () => {
       setCreatingGroup(false)
     }
   }, [simpleMode])
+
   const {
     proxyDisplayMode = 'simple',
     proxyDisplayOrder = 'default',
@@ -282,6 +283,11 @@ const Proxies: React.FC = () => {
 
   const [cols, setCols] = useState(1)
   const { virtuosoRef, isOpen, setIsOpen } = useProxyState(groups)
+
+  useEffect(() => {
+    if (editing) setIsOpen((prev) => prev.map(() => false))
+  }, [editing, setIsOpen])
+
   const [delaying, setDelaying] = useState<Set<string>[]>(() =>
     Array.from({ length: groups.length }, () => new Set<string>())
   )
@@ -574,7 +580,7 @@ const Proxies: React.FC = () => {
       }
       return groups[index] ? (
         <div
-          className={`w-full pt-2 ${index === groupCounts.length - 1 && !isOpen[index] ? 'pb-2' : ''} px-2`}
+          className={`w-full pt-2 ${index === groupCounts.length - 1 && (editing || !isOpen[index]) ? 'pb-2' : ''} px-2`}
         >
           <Card
             as="div"
