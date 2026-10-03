@@ -31,6 +31,7 @@ export const defaultConfig: IAppConfig = {
   enableTrafficLogger: DEFAULT_ENABLE_TRAFFIC_LOGGER,
   trayProxyGroupStyle: 'default',
   disableTrayIconColor: false,
+  trayTrafficTextColor: 'auto',
   customTrayIcon: '',
   customTrayIcons: {},
   maxLogDays: 7,

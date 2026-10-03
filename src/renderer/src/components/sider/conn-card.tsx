@@ -38,7 +38,8 @@ const ConnCard: React.FC<Props> = (props) => {
     connectionCardStatus = 'col-span-2',
     disableAnimations = false,
     hideConnectionCardWave = false,
-    disableTrayIconColor = false
+    disableTrayIconColor = false,
+    trayTrafficTextColor = 'auto'
   } = appConfig || {}
   const sysProxyEnabled = appConfig?.sysProxy?.enable
   const tunEnabled = controledMihomoConfig?.tun?.enable
@@ -210,7 +211,7 @@ const ConnCard: React.FC<Props> = (props) => {
     return (): void => {
       cancelled = true
     }
-  }, [showTraffic, sysProxyEnabled, tunEnabled, disableTrayIconColor])
+  }, [showTraffic, sysProxyEnabled, tunEnabled, disableTrayIconColor, trayTrafficTextColor])
 
   if (iconOnly) {
     return (

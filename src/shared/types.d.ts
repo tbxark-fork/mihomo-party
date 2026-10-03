@@ -391,6 +391,7 @@ interface IAppConfig {
   controlSniff?: boolean
   useDockIcon?: boolean
   showTraffic?: boolean
+  trayTrafficTextColor?: 'auto' | 'white' | 'black'
   disableTrayIconColor?: boolean
   customTrayIcon?: string
   customTrayIcons?: ICustomTrayIcons

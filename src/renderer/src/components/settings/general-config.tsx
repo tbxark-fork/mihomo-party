@@ -84,6 +84,7 @@ const GeneralConfig: React.FC = () => {
     disableTray = false,
     swapTrayClick = false,
     disableTrayIconColor = false,
+    trayTrafficTextColor = 'auto',
     customTrayIcon = '',
     customTrayIcons = {},
     disableAnimations = false,
@@ -611,6 +612,24 @@ const GeneralConfig: React.FC = () => {
                 }}
               />
             </SettingItem>
+            {platform === 'darwin' && showTraffic && (
+              <SettingItem title={t('settings.trayTrafficTextColor')} divider>
+                <Tabs
+                  size="sm"
+                  color="primary"
+                  selectedKey={trayTrafficTextColor}
+                  onSelectionChange={(key) => {
+                    void patchAppConfig({
+                      trayTrafficTextColor: key as 'auto' | 'white' | 'black'
+                    })
+                  }}
+                >
+                  <Tab key="auto" title={t('settings.trayTrafficTextColorAuto')} />
+                  <Tab key="white" title={t('settings.trayTrafficTextColorWhite')} />
+                  <Tab key="black" title={t('settings.trayTrafficTextColorBlack')} />
+                </Tabs>
+              </SettingItem>
+            )}
             <SettingItem
               title={t('settings.customTrayIcon')}
               actions={
