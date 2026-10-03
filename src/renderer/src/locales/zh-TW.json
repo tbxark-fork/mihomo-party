@@ -580,6 +580,7 @@
   "dns.overrideGuard.keepOff": "保持關閉",
   "dns.overrideGuard.enableAnyway": "仍然開啟",
   "dns.overrideGuard.autoDisabled": "偵測到目前訂閱包含自訂 DNS 設定，已自動關閉 DNS 覆寫。",
+  "dns.overrideGuard.disable": "關閉自動關閉 DNS 覆寫",
   "profiles.title": "訂閱管理",
   "profiles.input.placeholder": "請輸入您的訂閱網址",
   "profiles.updateAll": "更新全部訂閱",

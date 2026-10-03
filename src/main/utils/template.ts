@@ -58,6 +58,7 @@ export const defaultConfig: IAppConfig = {
   networkInfoCardOrder: DEFAULT_NETWORK_INFO_CARD_ORDER,
   useNameserverPolicy: DEFAULT_USE_NAMESERVER_POLICY,
   controlDns: DEFAULT_CONTROL_DNS,
+  disableDnsOverrideGuard: false,
   controlSniff: DEFAULT_CONTROL_SNIFF,
   floatingWindowCompatMode: true,
   disableHardwareAcceleration: false,

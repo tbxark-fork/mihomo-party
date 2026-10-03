@@ -580,6 +580,7 @@
   "dns.overrideGuard.keepOff": "Keep Off",
   "dns.overrideGuard.enableAnyway": "Enable Anyway",
   "dns.overrideGuard.autoDisabled": "The current profile contains custom DNS settings, so DNS override has been turned off automatically.",
+  "dns.overrideGuard.disable": "Disable automatic DNS override protection",
   "profiles.title": "Profile Management",
   "profiles.input.placeholder": "Enter your subscription URL",
   "profiles.updateAll": "Update All Profiles",

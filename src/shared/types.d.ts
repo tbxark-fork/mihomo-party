@@ -387,6 +387,7 @@ interface IAppConfig {
   subscriptionTimeout?: number
   encryptedPassword?: number[]
   controlDns?: boolean
+  disableDnsOverrideGuard?: boolean
   controlSniff?: boolean
   useDockIcon?: boolean
   showTraffic?: boolean

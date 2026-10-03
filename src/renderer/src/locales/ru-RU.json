@@ -567,6 +567,7 @@
   "dns.overrideGuard.keepOff": "Оставить выключенным",
   "dns.overrideGuard.enableAnyway": "Всё равно включить",
   "dns.overrideGuard.autoDisabled": "Текущий профиль содержит собственные настройки DNS, поэтому переопределение DNS отключено автоматически.",
+  "dns.overrideGuard.disable": "Отключить автоматическую защиту DNS override",
   "profiles.title": "Управление профилями",
   "profiles.input.placeholder": "Введите URL вашей подписки",
   "profiles.updateAll": "Обновить все профили",

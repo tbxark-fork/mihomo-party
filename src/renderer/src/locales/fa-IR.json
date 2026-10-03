@@ -565,6 +565,7 @@
   "dns.overrideGuard.keepOff": "خاموش بماند",
   "dns.overrideGuard.enableAnyway": "با این حال فعال شود",
   "dns.overrideGuard.autoDisabled": "اشتراک فعلی شامل تنظیمات DNS سفارشی است؛ بازنویسی DNS به‌طور خودکار خاموش شد.",
+  "dns.overrideGuard.disable": "غیرفعال کردن محافظت خودکار بازنویسی DNS",
   "profiles.title": "مدیریت پروفایل",
   "profiles.input.placeholder": "آدرس اشتراک خود را وارد کنید",
   "profiles.updateAll": "به‌روزرسانی همه پروفایل‌ها",
