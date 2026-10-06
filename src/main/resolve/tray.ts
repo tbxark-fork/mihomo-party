@@ -71,6 +71,7 @@ export const buildContextMenu = async (): Promise<Menu> => {
     sysProxy,
     envType = process.platform === 'win32' ? ['powershell'] : ['bash'],
     autoCloseConnection,
+    autoCloseConnectionOnlyGroup = false,
     proxyInTray = true,
     showCurrentProxyInTray = false,
     trayProxyGroupStyle = 'default',
@@ -129,7 +130,9 @@ export const buildContextMenu = async (): Promise<Menu> => {
                 click: async (): Promise<void> => {
                   await mihomoChangeProxy(group.name, proxy.name)
                   if (autoCloseConnection) {
-                    await mihomoCloseAllConnections()
+                    await mihomoCloseAllConnections(
+                      autoCloseConnectionOnlyGroup ? group.name : undefined
+                    )
                   }
                 }
               }

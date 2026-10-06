@@ -51,6 +51,7 @@ export const defaultConfig: IAppConfig = {
   autoUpdateProfileOnStart: true,
   silentUpdate: true,
   autoCloseConnection: true,
+  autoCloseConnectionOnlyGroup: false,
   subscriptionTimeout: 30000,
   gistAgeEncrypt: false,
   gistAgeRecipient: '',

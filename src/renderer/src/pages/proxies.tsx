@@ -277,6 +277,7 @@ const Proxies: React.FC = () => {
     proxyDisplayMode = 'simple',
     proxyDisplayOrder = 'default',
     autoCloseConnection = true,
+    autoCloseConnectionOnlyGroup = false,
     proxyCols = 'auto',
     delayTestConcurrency = 50
   } = appConfig || {}
@@ -377,11 +378,11 @@ const Proxies: React.FC = () => {
     async (group: string, proxy: string): Promise<void> => {
       await mihomoChangeProxy(group, proxy)
       if (autoCloseConnection) {
-        await mihomoCloseAllConnections()
+        await mihomoCloseAllConnections(autoCloseConnectionOnlyGroup ? group : undefined)
       }
       mutate()
     },
-    [autoCloseConnection, mutate]
+    [autoCloseConnection, autoCloseConnectionOnlyGroup, mutate]
   )
 
   const onProxyDelay = useCallback(

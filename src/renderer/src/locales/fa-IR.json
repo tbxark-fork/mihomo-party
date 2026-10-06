@@ -209,6 +209,8 @@
   "mihomo.hotReloadProfile.autoCloseConnectionTooltip": "فقط وقتی بارگذاری گرم در تغییر پروفایل فعال باشد اعمال می‌شود و پس از موفقیت بارگذاری گرم، همه اتصال‌های موجود را می‌بندد.",
   "mihomo.controlSniff": "کنترل تشخیص دامنه",
   "mihomo.autoCloseConnection": "بستن اتصال‌ها هنگام تغییر پراکسی/حالت",
+  "mihomo.autoCloseConnectionOnlyGroup": "بستن اتصال‌ها فقط در گروه تغییرکرده",
+  "mihomo.autoCloseConnectionOnlyGroupTooltip": "هنگام تغییر پراکسی، فقط اتصال‌های این گروه بسته می‌شوند. بستن خودکار اتصال‌ها باید فعال باشد.",
   "mihomo.testProfileOnStart": "بررسی پروفایل در شروع",
   "mihomo.testProfileOnStartTooltip": "قبل از شروع هسته، فایل پیکربندی را بررسی کنید. اگر نامعتبر باشد، شروع مسدود شده و پیام خطا نمایش داده می‌شود",
   "mihomo.pauseSSID.title": "اتصال مستقیم برای SSID‌های خاص",

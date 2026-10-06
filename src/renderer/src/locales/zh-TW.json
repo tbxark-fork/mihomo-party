@@ -218,6 +218,8 @@
   "mihomo.hotReloadProfile.autoCloseConnectionTooltip": "僅在啟用切換訂閱時熱重載配置後生效，熱重載成功後關閉所有現有連接",
   "mihomo.controlSniff": "控制域名嗅探",
   "mihomo.autoCloseConnection": "切換代理/模式時關閉連接",
+  "mihomo.autoCloseConnectionOnlyGroup": "僅關閉切換組的連接",
+  "mihomo.autoCloseConnectionOnlyGroupTooltip": "切換節點時僅關閉經過該代理組的連接，需要開啟自動關閉連接。",
   "mihomo.testProfileOnStart": "啟動時檢查配置檔案",
   "mihomo.testProfileOnStartTooltip": "啟動內核前檢查配置檔案是否有效，若無效則阻止啟動並顯示錯誤訊息",
   "mihomo.pauseSSID.title": "指定 Wi-Fi SSID 直連",

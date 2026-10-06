@@ -215,6 +215,8 @@
   "mihomo.hotReloadProfile.autoCloseConnectionTooltip": "Only applies when hot reload on profile switch is enabled. Closes all existing connections after hot reload succeeds.",
   "mihomo.controlSniff": "Control Domain Sniffing",
   "mihomo.autoCloseConnection": "Close Connections on Proxy/Mode Switch",
+  "mihomo.autoCloseConnectionOnlyGroup": "Only Close Connections in the Switched Group",
+  "mihomo.autoCloseConnectionOnlyGroupTooltip": "When switching a proxy, only closes connections through that group. Requires automatic connection closing to be enabled.",
   "mihomo.testProfileOnStart": "Test Profile on Start",
   "mihomo.testProfileOnStartTooltip": "Check if the configuration file is valid before starting the core. If invalid, prevent startup and display an error message",
   "mihomo.pauseSSID.title": "Direct Connection for Specific WiFi SSIDs",
