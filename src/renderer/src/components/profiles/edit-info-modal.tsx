@@ -15,7 +15,8 @@ import {
   DropdownMenu,
   DropdownItem,
   Tabs,
-  Tab
+  Tab,
+  Tooltip
 } from '@heroui/react'
 import { toast } from '@renderer/components/base/toast'
 import React, { useEffect, useState } from 'react'
@@ -33,7 +34,7 @@ import {
   addProfileItem as importProfile,
   updateProfileItem as saveProfile
 } from '@renderer/utils/ipc'
-import { MdDeleteForever } from 'react-icons/md'
+import { MdDeleteForever, MdInfoOutline } from 'react-icons/md'
 import { FaPlus } from 'react-icons/fa6'
 import { useTranslation } from 'react-i18next'
 import { isValidCron } from 'cron-validator'
@@ -342,60 +343,59 @@ const EditInfoModal: React.FC<Props> = (props) => {
           </SettingItem>
           {values.autoUpdate && (
             <>
-              <SettingItem title={t('profiles.editInfo.interval')}>
-                <div className="flex flex-col gap-2">
-                  <Input
-                    size="sm"
-                    type="text"
-                    className={cn(
-                      inputWidth,
-                      // 不合法
-                      typeof values.interval === 'string' &&
-                        !/^\d+$/.test(values.interval) &&
-                        !isValidCron(values.interval, { seconds: false }) &&
-                        'border-red-500'
-                    )}
-                    value={values.interval?.toString() ?? ''}
-                    onValueChange={(v) => {
-                      // 输入限制
-                      if (/^[\d\s*\-,/]*$/.test(v)) {
-                        // 纯数字
-                        if (/^\d+$/.test(v)) {
-                          setValues({ ...values, interval: parseInt(v, 10) || 0 })
-                          return
-                        }
-                        // 非纯数字
-                        try {
-                          setValues({ ...values, interval: v })
-                        } catch {
-                          // ignore
-                        }
-                      }
-                    }}
-                    placeholder={t('profiles.editInfo.intervalPlaceholder')}
-                  />
-
-                  {/* 动态提示信息 */}
-                  <div
-                    className="text-xs"
-                    style={{
-                      color:
-                        typeof values.interval === 'string' &&
-                        !/^\d+$/.test(values.interval) &&
-                        !isValidCron(values.interval, { seconds: false })
-                          ? '#ef4444'
-                          : '#6b7280'
-                    }}
-                  >
-                    {typeof values.interval === 'number'
-                      ? t('profiles.editInfo.intervalMinutes')
-                      : /^\d+$/.test(values.interval?.toString() || '')
+              <SettingItem
+                title={t('profiles.editInfo.interval')}
+                actions={
+                  <Tooltip
+                    content={
+                      typeof values.interval === 'number' ||
+                      /^\d+$/.test(values.interval?.toString() || '')
                         ? t('profiles.editInfo.intervalMinutes')
                         : isValidCron(values.interval?.toString() || '', { seconds: false })
                           ? t('profiles.editInfo.intervalCron')
-                          : t('profiles.editInfo.intervalHint')}
-                  </div>
-                </div>
+                          : t('profiles.editInfo.intervalHint')
+                    }
+                  >
+                    <button
+                      type="button"
+                      aria-label={t('profiles.editInfo.intervalHint')}
+                      className="ml-1.5 flex h-8 items-center text-foreground-500"
+                    >
+                      <MdInfoOutline className="text-sm" />
+                    </button>
+                  </Tooltip>
+                }
+              >
+                <Input
+                  size="sm"
+                  type="text"
+                  className={cn(
+                    inputWidth,
+                    // 不合法
+                    typeof values.interval === 'string' &&
+                      !/^\d+$/.test(values.interval) &&
+                      !isValidCron(values.interval, { seconds: false }) &&
+                      'border-red-500'
+                  )}
+                  value={values.interval?.toString() ?? ''}
+                  onValueChange={(v) => {
+                    // 输入限制
+                    if (/^[\d\s*\-,/]*$/.test(v)) {
+                      // 纯数字
+                      if (/^\d+$/.test(v)) {
+                        setValues({ ...values, interval: parseInt(v, 10) || 0 })
+                        return
+                      }
+                      // 非纯数字
+                      try {
+                        setValues({ ...values, interval: v })
+                      } catch {
+                        // ignore
+                      }
+                    }
+                  }}
+                  placeholder={t('profiles.editInfo.intervalPlaceholder')}
+                />
               </SettingItem>
               <SettingItem title={t('profiles.editInfo.fixedInterval')}>
                 <Switch
