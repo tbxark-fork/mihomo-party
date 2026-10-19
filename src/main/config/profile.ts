@@ -189,17 +189,30 @@ export async function changeCurrentProfile(id: string): Promise<void> {
   }
 }
 
+function normalizeCustomHome(value?: string): string | undefined {
+  const home = value?.trim()
+  if (!home) return undefined
+  try {
+    const { protocol } = new URL(home)
+    if (protocol === 'http:' || protocol === 'https:') return home
+  } catch {
+    // Report invalid URLs with the same message as unsupported protocols.
+  }
+  throw new Error(i18next.t('profiles.editInfo.invalidHome'))
+}
+
 export async function updateProfileItem(
   item: IProfileItem,
   simpleOptions?: SimpleSubscriptionOptions
 ): Promise<void> {
+  const customHome = normalizeCustomHome(item.customHome)
   const previous = simpleOptions ? await getProfileItem(item.id) : undefined
   await updateProfileConfig((config) => {
     const index = config.items.findIndex((i) => i.id === item.id)
     if (index === -1) {
       throw new Error('Profile not found')
     }
-    config.items[index] = item
+    config.items[index] = { ...item, customHome }
     return config
   })
   if (simpleOptions && (await getAppConfig()).operationMode === 'simple') {
@@ -519,6 +532,7 @@ export async function createProfile(item: Partial<IProfileItem>): Promise<IProfi
     name: item.name || (item.type === 'remote' ? 'Remote File' : 'Local File'),
     type: item.type || 'local',
     url: item.url,
+    customHome: normalizeCustomHome(item.customHome),
     substore: item.substore || false,
     interval: item.interval || 0,
     override: item.override || [],
