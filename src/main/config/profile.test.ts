@@ -18,6 +18,12 @@ import {
 
 let testDir = ''
 
+async function requireProfileItem(id: string) {
+  const item = await getProfileItem(id)
+  if (!item) throw new Error(`Profile ${id} was not found`)
+  return item
+}
+
 const mocks = vi.hoisted(() => ({
   axiosGet: vi.fn(),
   checkProfileConfig: vi.fn(),
@@ -62,7 +68,9 @@ vi.mock('../core/factory', async () => {
   return {
     generateProfile: mocks.generateProfile,
     globalOverrideIdsNow: async () =>
-      (await getOverrideConfig()).items.filter((o) => o.global).map((o) => o.id)
+      (await getOverrideConfig()).items
+        .filter((o: { global?: boolean }) => o.global)
+        .map((o: { id: string }) => o.id)
   }
 })
 vi.mock('i18next', () => ({ default: { t: (key: string) => key } }))
@@ -165,14 +173,15 @@ beforeEach(async () => {
   await getOverrideConfig(true)
 })
 
-const globalOverride = (id: string): IOverrideItem => ({
-  id,
-  type: 'local',
-  ext: 'yaml',
-  name: id,
-  updated: 1,
-  global: true
-})
+const globalOverride = (id: string) =>
+  ({
+    id,
+    type: 'local',
+    ext: 'yaml',
+    name: id,
+    updated: 1,
+    global: true
+  }) as const
 
 afterEach(() => {
   rmSync(testDir, { recursive: true, force: true })
@@ -209,7 +218,7 @@ describe('remote profile candidate validation', () => {
 })
 
 describe('custom profile homepage', () => {
-  const getRemoteProfile = async (): Promise<IProfileItem> => {
+  const getRemoteProfile = async () => {
     const item = await getProfileItem('remote')
     if (!item) throw new Error('Missing remote profile')
     return item
@@ -397,10 +406,10 @@ describe('plugin subscription validation follow-ups (V6 regressions)', () => {
 
   it('does not revert a user override changed while the core was validating', async () => {
     await upsertPluginProfile(meta, newProfile)
-    await updateProfileItem({ ...(await getProfileItem('plugin1'))!, override: ['A'] })
+    await updateProfileItem({ ...(await requireProfileItem('plugin1')), override: ['A'] })
     // the validator "takes a while"; meanwhile the user switches the override to B
     mocks.checkProfileConfig.mockImplementationOnce(async () => {
-      await updateProfileItem({ ...(await getProfileItem('plugin1'))!, override: ['B'] })
+      await updateProfileItem({ ...(await requireProfileItem('plugin1')), override: ['B'] })
     })
     await upsertPluginProfile(meta, oldProfile)
     expect((await getProfileItem('plugin1'))?.override).toEqual(['B'])
@@ -458,10 +467,10 @@ describe('plugin subscription validation follow-ups (V7 regressions)', () => {
 
   it('R2-ISS-053: an override enabled during validation triggers a re-validation against the new set before the write', async () => {
     await upsertPluginProfile(meta, newProfile)
-    await updateProfileItem({ ...(await getProfileItem('plugin1'))!, override: ['A'] })
+    await updateProfileItem({ ...(await requireProfileItem('plugin1')), override: ['A'] })
     mocks.generateProfile.mockClear()
     mocks.checkProfileConfig.mockImplementationOnce(async () => {
-      await updateProfileItem({ ...(await getProfileItem('plugin1'))!, override: ['A', 'B'] })
+      await updateProfileItem({ ...(await requireProfileItem('plugin1')), override: ['A', 'B'] })
     })
     await upsertPluginProfile(meta, oldProfile)
     // validated once against [A], then again against [A, B]; the write happened after the second pass
@@ -491,11 +500,13 @@ describe('plugin subscription validation follow-ups (V7 regressions)', () => {
     await upsertPluginProfile(meta, newProfile)
     mocks.generateProfile.mockClear()
     // the recorded set is [G]; G is off while the config is generated and back on before the commit check
-    mocks.generateProfile.mockImplementationOnce(async (_c, o) => {
-      expect(o?.globalOverrideIds).toEqual(['G']) // generation uses the recorded set, not a fresh read
-      await updateOverrideConfig(() => ({ items: [] }))
-      return 'remote'
-    })
+    mocks.generateProfile.mockImplementationOnce(
+      async (_c: unknown, o?: { globalOverrideIds?: string[] }) => {
+        expect(o?.globalOverrideIds).toEqual(['G']) // generation uses the recorded set, not a fresh read
+        await updateOverrideConfig(() => ({ items: [] }))
+        return 'remote'
+      }
+    )
     mocks.checkProfileConfig.mockImplementationOnce(async () => {
       await updateOverrideConfig(() => ({ items: [globalOverride('G')] }))
     })
@@ -520,7 +531,7 @@ describe('plugin subscription validation follow-ups (V7 regressions)', () => {
     // the toggle was queued behind the commit's critical section (shared runtime-config write queue)
     expect(landedDuringWrite).toBe(false)
     await toggle
-    expect((await getOverrideConfig()).items.map((i) => i.id)).toEqual(['G'])
+    expect((await getOverrideConfig()).items.map((i: { id: string }) => i.id)).toEqual(['G'])
     // what landed was validated against the set that was current at the write: no globals
     expect(mocks.generateProfile).toHaveBeenCalledTimes(1)
     expect(mocks.generateProfile.mock.calls[0][1]).toMatchObject({ globalOverrideIds: [] })
@@ -535,8 +546,8 @@ describe('plugin subscription validation follow-ups (V7 regressions)', () => {
       await updateOverrideConfig(() => ({ items: [globalOverride('NEW')] }))
     })
     const forced = await getOverrideConfig(true)
-    expect(forced.items.map((i) => i.id)).toEqual(['NEW'])
-    expect((await getOverrideConfig()).items.map((i) => i.id)).toEqual(['NEW'])
+    expect(forced.items.map((i: { id: string }) => i.id)).toEqual(['NEW'])
+    expect((await getOverrideConfig()).items.map((i: { id: string }) => i.id)).toEqual(['NEW'])
   })
 
   it('R2-ISS-065: a budget that expires while the commit waits for the write queue aborts the commit without writing', async () => {
@@ -592,7 +603,7 @@ describe('plugin subscription validation follow-ups (V7 regressions)', () => {
     let n = 0
     mocks.checkProfileConfig.mockImplementation(async () => {
       n++
-      await updateProfileItem({ ...(await getProfileItem('plugin1'))!, override: [`O${n}`] })
+      await updateProfileItem({ ...(await requireProfileItem('plugin1')), override: [`O${n}`] })
     })
     await expect(upsertPluginProfile(meta, oldProfile)).rejects.toMatchObject({
       code: 'PLUGIN_PROFILE_INVALID'
