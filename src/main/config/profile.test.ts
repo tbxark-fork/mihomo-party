@@ -36,7 +36,8 @@ const mocks = vi.hoisted(() => ({
   beforeWrite: vi.fn(),
   generateProfile: vi.fn(),
   hotReload: vi.fn(),
-  restartCore: vi.fn()
+  restartCore: vi.fn(),
+  yamlMaxAliasCount: 100
 }))
 
 vi.mock('electron', () => ({ app: { getVersion: () => '2.0.0' } }))
@@ -116,7 +117,8 @@ vi.mock('./app', () => ({
     Promise.resolve({
       core: 'mihomo',
       subscriptionTimeout: 30000,
-      userAgent: 'mihomo.party/v2.0.0 (clash.meta)'
+      userAgent: 'mihomo.party/v2.0.0 (clash.meta)',
+      yamlMaxAliasCount: mocks.yamlMaxAliasCount
     })
 }))
 vi.mock('./controledMihomo', () => ({
@@ -166,6 +168,7 @@ beforeEach(async () => {
   mocks.generateProfile.mockResolvedValue('remote')
   mocks.checkProfileConfig.mockResolvedValue(undefined)
   mocks.hotReload.mockResolvedValue(undefined)
+  mocks.yamlMaxAliasCount = 100
   // the plugin record the schedule is read from at write time
   mocks.getPluginItem.mockResolvedValue({ id: 'pg', interval: 60, autoUpdate: true })
   // the module caches must match the freshly written files (all real writes go through the queue and keep them in sync)
@@ -188,6 +191,39 @@ afterEach(() => {
 })
 
 describe('remote profile candidate validation', () => {
+  const aliasedProfile = [
+    'base: &base',
+    '  type: http',
+    '  server: 127.0.0.1',
+    '  port: 8080',
+    'proxies:',
+    ...Array.from({ length: 120 }, (_, i) => `  - <<: *base\n    name: p${i}`),
+    ''
+  ].join('\n')
+
+  it('uses the configured YAML alias limit for trusted subscriptions', async () => {
+    mocks.axiosGet.mockResolvedValue({
+      status: 200,
+      data: aliasedProfile,
+      headers: { 'content-type': 'text/yaml' }
+    })
+
+    await expect(
+      createProfile({ id: 'remote', type: 'remote', name: 'Remote', url: 'https://example.test' })
+    ).rejects.toThrow('Excessive alias count')
+
+    mocks.yamlMaxAliasCount = 200
+    await expect(
+      createProfile({ id: 'remote', type: 'remote', name: 'Remote', url: 'https://example.test' })
+    ).resolves.toMatchObject({ id: 'remote' })
+    expect(readFileSync(join(testDir, 'profiles', 'remote.yaml'), 'utf8')).toBe(aliasedProfile)
+
+    mocks.yamlMaxAliasCount = -1
+    await expect(
+      createProfile({ id: 'remote', type: 'remote', name: 'Remote', url: 'https://example.test' })
+    ).resolves.toMatchObject({ id: 'remote' })
+  })
+
   it('keeps the last-known-good profile when semantic validation fails', async () => {
     mocks.checkProfileConfig.mockRejectedValueOnce(new Error("proxy 'missing-group' not found"))
 
