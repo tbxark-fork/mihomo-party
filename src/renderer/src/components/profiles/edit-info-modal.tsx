@@ -29,6 +29,7 @@ import {
   addProfileUpdater,
   getFilePath,
   readTextFile,
+  getProfileImportInfo,
   getSimpleConfig,
   previewSimpleConfig,
   addProfileItem as importProfile,
@@ -83,6 +84,60 @@ const EditInfoModal: React.FC<Props> = (props) => {
     : 'w-[400px] md:w-[400px] lg:w-[600px] xl:w-[800px]'
   const { t } = useTranslation()
   const isImportMode = mode === 'import'
+  useEffect(() => {
+    const url = values.url?.trim()
+    if (!isImportMode || values.type !== 'remote' || !url || !/^https?:\/\//i.test(url)) return
+    let active = true
+    const timer = setTimeout(() => {
+      getProfileImportInfo({
+        url,
+        useProxy: values.useProxy,
+        userAgent: values.userAgent,
+        authToken: values.authToken,
+        substore: values.substore,
+        allowFixedInterval: values.allowFixedInterval,
+        updateTimeout: values.updateTimeout
+      })
+        .then((info) => {
+          if (!active) return
+          setValues((current) => {
+            if (current.url?.trim() !== url) return current
+            const next = { ...current }
+            if (
+              info.name &&
+              info.name !== 'Remote File' &&
+              (!next.name || next.name === 'Remote File')
+            )
+              next.name = info.name
+            if (info.home && !next.customHome && /^https?:\/\//i.test(info.home))
+              next.customHome = info.home
+            if (info.interval && !next.interval) {
+              next.interval = info.interval
+              next.autoUpdate = true
+            }
+            if (info.extra && !next.extra) next.extra = info.extra
+            return next
+          })
+        })
+        .catch(() => {
+          // HEAD metadata is optional; the subscription can still be imported manually.
+        })
+    }, 300)
+    return () => {
+      active = false
+      clearTimeout(timer)
+    }
+  }, [
+    isImportMode,
+    values.type,
+    values.url,
+    values.useProxy,
+    values.userAgent,
+    values.authToken,
+    values.substore,
+    values.allowFixedInterval,
+    values.updateTimeout
+  ])
   useEffect(() => {
     if (!simpleMode || isImportMode) return
     let active = true

@@ -46,6 +46,7 @@ const validInvokeChannels = [
   'getCurrentProfileItem',
   'getProfileItem',
   'getProfileStr',
+  'getProfileImportInfo',
   'setProfileStr',
   'addProfileItem',
   'removeProfileItem',

@@ -73,6 +73,18 @@ interface IpcApi {
   getCurrentProfileItem: () => Promise<IProfileItem>
   getProfileItem: (id: string | undefined) => Promise<IProfileItem>
   getProfileStr: (id: string) => Promise<string>
+  getProfileImportInfo: (
+    item: Pick<
+      IProfileItem,
+      | 'url'
+      | 'useProxy'
+      | 'userAgent'
+      | 'authToken'
+      | 'substore'
+      | 'allowFixedInterval'
+      | 'updateTimeout'
+    >
+  ) => Promise<Partial<IProfileItem>>
   setProfileStr: (id: string, str: string) => Promise<void>
   addProfileItem: (
     item: Partial<IProfileItem>,
@@ -328,6 +340,7 @@ export const {
   getCurrentProfileItem,
   getProfileItem,
   getProfileStr,
+  getProfileImportInfo,
   setProfileStr,
   addProfileItem,
   removeProfileItem,

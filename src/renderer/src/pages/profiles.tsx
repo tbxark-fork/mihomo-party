@@ -26,6 +26,7 @@ import { usePluginConfig } from '@renderer/hooks/use-plugin-config'
 import {
   getAppConfig,
   getFilePath,
+  getProfileImportInfo,
   readTextFile,
   subStoreCollections,
   subStoreSubs,
@@ -180,14 +181,29 @@ const Profiles: React.FC = () => {
       return
     }
     setImporting(true)
+    let info: Partial<IProfileItem> = {}
+    try {
+      info = await getProfileImportInfo({
+        url,
+        useProxy,
+        authToken: authToken || undefined,
+        userAgent: userAgent || undefined
+      })
+    } catch {
+      // HEAD metadata is optional; continue with the original import values.
+    }
     await addProfileItem({
-      name: '',
+      name: info.name || '',
       type: 'remote',
       url,
       useProxy,
       authToken: authToken || undefined,
       userAgent: userAgent || undefined,
-      ageSecretKey: ageSecretKey || undefined
+      ageSecretKey: ageSecretKey || undefined,
+      home: info.home,
+      extra: info.extra,
+      interval: info.interval,
+      autoUpdate: info.interval !== undefined ? true : undefined
     })
     setUrl('')
     setAuthToken('')
