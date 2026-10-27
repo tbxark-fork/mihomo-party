@@ -48,12 +48,22 @@ interface Props {
   mode?: 'edit' | 'import'
   updateProfileItem?: (item: IProfileItem) => Promise<void>
   addProfileItem?: (item: Partial<IProfileItem>) => Promise<void>
+  simpleModeOverride?: boolean
+  onImported?: (item: IProfileItem) => void
   onClose: () => void
 }
 const EditInfoModal: React.FC<Props> = (props) => {
-  const { item, mode = 'edit', updateProfileItem, addProfileItem, onClose } = props
+  const {
+    item,
+    mode = 'edit',
+    updateProfileItem,
+    addProfileItem,
+    simpleModeOverride,
+    onImported,
+    onClose
+  } = props
   const { appConfig } = useAppConfig()
-  const simpleMode = appConfig?.operationMode === 'simple'
+  const simpleMode = simpleModeOverride ?? appConfig?.operationMode === 'simple'
   const { mutateProfileConfig } = useProfileConfig()
   const { mutate } = useSWRConfig()
   const [simpleOptions, setSimpleOptions] = useState<SimpleSubscriptionOptions>({
@@ -165,8 +175,10 @@ const EditInfoModal: React.FC<Props> = (props) => {
         if (Object.keys(header).length) providerOptions.header = header
         else delete providerOptions.header
         const options = { ...simpleOptions, providerOptions }
-        if (isImportMode) await importProfile(updatedItem, options)
-        else {
+        if (isImportMode) {
+          const imported = await importProfile(updatedItem, options)
+          onImported?.(imported)
+        } else {
           await saveProfile(updatedItem, options)
           await addProfileUpdater(updatedItem)
         }

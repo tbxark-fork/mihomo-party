@@ -161,7 +161,8 @@ import {
   exportSimpleConfig,
   importSimpleSubscription,
   refreshSimpleSource,
-  removeSimpleSource
+  removeSimpleSource,
+  attachSimpleSubscriptionGroups
 } from '../simple/service'
 import { setOperationMode } from '../simple/mode'
 import { getImageDataURL } from './image'
@@ -349,6 +350,7 @@ const asyncHandlers: Record<string, AsyncFn> = {
   importSimpleSubscription,
   refreshSimpleSource,
   removeSimpleSource,
+  attachSimpleSubscriptionGroups,
   setOperationMode,
   readTextFile,
   // Core

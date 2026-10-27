@@ -236,7 +236,7 @@ export async function updateProfileItem(
 export async function addProfileItem(
   item: Partial<IProfileItem>,
   simpleOptions?: SimpleSubscriptionOptions
-): Promise<void> {
+): Promise<IProfileItem> {
   const newItem = await createProfile(item)
   let shouldChangeCurrent = false
   let newProfileIsCurrentAfterUpdate = false
@@ -258,7 +258,7 @@ export async function addProfileItem(
     const { configureSimpleSubscription } = await import('../simple/service')
     await addProfileUpdater(newItem)
     await configureSimpleSubscription(newItem.id, simpleOptions)
-    return
+    return newItem
   }
 
   // If the new profile will become the current profile, ensure generateProfile is called
@@ -278,6 +278,7 @@ export async function addProfileItem(
     await changeCurrentProfile(newItem.id)
   }
   await addProfileUpdater(newItem)
+  return newItem
 }
 
 export async function removeProfileItem(id: string): Promise<void> {

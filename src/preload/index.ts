@@ -91,6 +91,7 @@ const validInvokeChannels = [
   'importSimpleSubscription',
   'refreshSimpleSource',
   'removeSimpleSource',
+  'attachSimpleSubscriptionGroups',
   'setOperationMode',
   'getFilePath',
   'readTextFile',
