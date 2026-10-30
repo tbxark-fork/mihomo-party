@@ -7,6 +7,7 @@ import { atomicWriteFile, WriteQueue } from '../utils/safeFile'
 import { parse, stringify } from '../utils/yaml'
 import {
   localProfileConfigPath,
+  localConfigPath,
   localOutputPath,
   mihomoWorkConfigPath,
   mihomoWorkDir
@@ -106,7 +107,16 @@ export async function importLocalProfileContent(content: string): Promise<void> 
 export async function getLocalState(): Promise<LocalState> {
   const profileId = await activeLocalProfileId()
   const statePath = localProfileConfigPath(profileId)
-  if (!existsSync(statePath)) {
+  const legacyProfileStatePath = path.join(path.dirname(statePath), `${profileId}.local.yaml`)
+  const legacyPath = localConfigPath()
+  const readPath = existsSync(legacyProfileStatePath)
+    ? legacyProfileStatePath
+    : existsSync(statePath)
+      ? statePath
+      : profileId === 'local'
+        ? legacyPath
+        : statePath
+  if (!existsSync(readPath)) {
     if (profileId !== 'local') {
       try {
         const { getProfileStr } = await import('../config/profile')
@@ -119,13 +129,14 @@ export async function getLocalState(): Promise<LocalState> {
   }
   let raw: unknown
   try {
-    raw = parse(await readFile(statePath, 'utf8'))
+    raw = parse(await readFile(readPath, 'utf8'))
   } catch {
     return defaultState()
   }
   if (!raw || typeof raw !== 'object') return defaultState()
   const base = defaultState()
   const value = raw as Partial<LocalState>
+  if (!value.draft && !value.published) return stateFromProfileConfig(raw)
   return {
     version: 2,
     revision: Number(value.revision) || 0,
@@ -136,16 +147,14 @@ export async function getLocalState(): Promise<LocalState> {
 export async function saveLocalState(state: LocalState): Promise<void> {
   await mkdir(mihomoWorkDir(), { recursive: true })
   const profileId = await activeLocalProfileId()
-  const stored = structuredClone(state)
-  for (const draft of [stored.draft, stored.published]) {
-    for (const source of draft.sources) {
-      if (!source.profileId) continue
-      source.proxies = []
-      delete source.content
-    }
-  }
+  const result = compileLocalConfig(await resolveLocalDraft(state.draft), await getSharedConfig())
+  if (result.errors.length) throw new Error(result.errors.join('\n'))
   await mkdir(path.dirname(localProfileConfigPath(profileId)), { recursive: true })
-  await atomicWriteFile(localProfileConfigPath(profileId), stringify(stored), { encoding: 'utf8' })
+  await atomicWriteFile(localProfileConfigPath(profileId), result.yaml, { encoding: 'utf8' })
+  await rm(path.join(path.dirname(localProfileConfigPath(profileId)), `${profileId}.local.yaml`), {
+    force: true
+  })
+  await rm(localConfigPath(), { force: true })
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send('controledMihomoConfigUpdated')
   }

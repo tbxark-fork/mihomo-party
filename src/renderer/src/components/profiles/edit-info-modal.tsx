@@ -6,6 +6,7 @@ import {
   ModalBody,
   ModalFooter,
   Button,
+  Checkbox,
   Input,
   Switch,
   Select,
@@ -38,6 +39,7 @@ import { MdDeleteForever, MdInfoOutline } from 'react-icons/md'
 import { FaPlus } from 'react-icons/fa6'
 import { useTranslation } from 'react-i18next'
 import { isValidCron } from 'cron-validator'
+import { parse } from 'yaml'
 import SettingItem from '../base/base-setting-item'
 import type { LocalObject, LocalSubscriptionOptions } from '../../../../shared/local-config'
 import ProviderOptions from '../local/provider-options'
@@ -58,6 +60,8 @@ const EditInfoModal: React.FC<Props> = (props) => {
   const [localOptions, setLocalOptions] = useState<LocalSubscriptionOptions>({
     mode: 'group'
   })
+  const [localGroupNames, setLocalGroupNames] = useState<string[]>([])
+  const [sourceGroupsLoaded, setSourceGroupsLoaded] = useState(false)
   const [isSourceProfile, setIsSourceProfile] = useState(mode === 'import')
   const [providerHeaders, setProviderHeaders] = useState<HeaderRow[]>([])
   const [outbounds, setOutbounds] = useState<string[]>(['DIRECT'])
@@ -134,9 +138,111 @@ const EditInfoModal: React.FC<Props> = (props) => {
     getLocalConfig()
       .then((state) => {
         if (!active) return
-        const source = state.draft.sources.find((source) => source.profileId === item.id)
+        const providers = parse(state.draft.modules['proxy-providers'])
+        const providerEntries: [string, Record<string, unknown>][] =
+          providers && typeof providers === 'object' && !Array.isArray(providers)
+            ? Object.entries(providers).filter(
+                (entry): entry is [string, Record<string, unknown>] =>
+                  entry[1] !== null && typeof entry[1] === 'object' && !Array.isArray(entry[1])
+              )
+            : []
+        const providerEntry = providerEntries.find(
+          ([name, value]) =>
+            name === item.name ||
+            (value && typeof value === 'object' && value.url === item.url && Boolean(item.url))
+        )
+        const prefix = `[${item.name}] `
+        const localProxies = parse(state.draft.modules.proxies)
+        const nodeSource = Array.isArray(localProxies)
+          ? localProxies.filter(
+              (node): node is Record<string, unknown> =>
+                node !== null &&
+                typeof node === 'object' &&
+                !Array.isArray(node) &&
+                typeof node.name === 'string' &&
+                node.name.startsWith(prefix)
+            )
+          : []
+        const linkedSource = state.draft.sources.find((source) => source.profileId === item.id)
+        const source =
+          linkedSource ||
+          (providerEntry
+            ? {
+                name: providerEntry[0],
+                mode:
+                  providerEntry[1] && typeof providerEntry[1] === 'object'
+                    ? providerEntry[1].type === 'inline'
+                      ? 'inline'
+                      : 'http'
+                    : 'http',
+                prefix:
+                  providerEntry[1] && typeof providerEntry[1] === 'object'
+                    ? String(
+                        (providerEntry[1].override as Record<string, unknown> | undefined)?.[
+                          'additional-prefix'
+                        ] || `[${providerEntry[0]}] `
+                      )
+                    : `[${providerEntry[0]}] `,
+                proxies: []
+              }
+            : nodeSource.length
+              ? {
+                  name: item.name,
+                  mode: 'extract',
+                  prefix,
+                  proxies: nodeSource.map((node) => ({
+                    ...node,
+                    name: String(node.name).slice(prefix.length)
+                  }))
+                }
+              : undefined)
         setIsSourceProfile(Boolean(source))
-        const providerOptions = structuredClone(source?.providerOptions || {})
+        const groups = parse(state.draft.modules['proxy-groups'])
+        const names = Array.isArray(groups)
+          ? groups
+              .filter(
+                (group): group is Record<string, unknown> =>
+                  group !== null && typeof group === 'object' && !Array.isArray(group)
+              )
+              .map((group) => group.name)
+              .filter((name): name is string => typeof name === 'string' && name.trim().length > 0)
+          : []
+        setLocalGroupNames(names)
+        if (source) {
+          const entries =
+            source.mode === 'extract'
+              ? source.proxies.map((node) => `${source.prefix}${node.name}`)
+              : [source.name]
+          const selected = Array.isArray(groups)
+            ? groups
+                .filter(
+                  (group): group is Record<string, unknown> =>
+                    group !== null && typeof group === 'object' && !Array.isArray(group)
+                )
+                .filter((group) => {
+                  const use = Array.isArray(group.use) ? group.use : []
+                  const proxies = Array.isArray(group.proxies) ? group.proxies : []
+                  return (
+                    use.includes(source.name) || entries.some((entry) => proxies.includes(entry))
+                  )
+                })
+                .map((group) => group.name)
+                .filter((name): name is string => typeof name === 'string')
+            : []
+          setLocalOptions((current) => ({
+            ...current,
+            mode: source.mode === 'extract' ? 'nodes' : 'group',
+            prefix: source.prefix,
+            providerName: source.name,
+            targetGroups: selected
+          }))
+          setSourceGroupsLoaded(true)
+        } else {
+          setSourceGroupsLoaded(false)
+        }
+        const providerOptions = structuredClone(
+          linkedSource?.providerOptions || providerEntry?.[1] || {}
+        )
         const header = (providerOptions.header || {}) as Record<string, string[]>
         const customHeaders: HeaderRow[] = []
         for (const [name, values] of Object.entries(header)) {
@@ -156,12 +262,13 @@ const EditInfoModal: React.FC<Props> = (props) => {
           }))
         delete providerOptions['age-secret-key']
         setProviderHeaders(customHeaders)
-        setLocalOptions({
+        setLocalOptions((current) => ({
+          ...current,
           mode: source?.mode === 'extract' ? 'nodes' : 'group',
           prefix: source?.prefix,
           providerName: source?.name,
           providerOptions
-        })
+        }))
         setOptionsLoaded(true)
       })
       .catch((error) => {
@@ -170,7 +277,7 @@ const EditInfoModal: React.FC<Props> = (props) => {
     return () => {
       active = false
     }
-  }, [isImportMode, item.id])
+  }, [isImportMode, item.id, item.name, item.url])
   useEffect(() => {
     if (!asSource) return
     let active = true
@@ -222,7 +329,10 @@ const EditInfoModal: React.FC<Props> = (props) => {
         else delete providerOptions.header
         const options = {
           ...localOptions,
-          providerOptions
+          providerOptions,
+          ...(sourceGroupsLoaded && !isImportMode
+            ? { targetGroups: localOptions.targetGroups || [] }
+            : {})
         }
         if (isImportMode) {
           const imported = await importProfile(updatedItem, options)
@@ -339,6 +449,33 @@ const EditInfoModal: React.FC<Props> = (props) => {
                 placeholder={values.name}
                 onValueChange={(providerName) => setLocalOptions({ ...localOptions, providerName })}
               />
+            </SettingItem>
+          )}
+          {!isImportMode && sourceGroupsLoaded && (
+            <SettingItem title="关联代理组">
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {localGroupNames.length ? (
+                  localGroupNames.map((name) => (
+                    <Checkbox
+                      key={name}
+                      size="sm"
+                      isSelected={localOptions.targetGroups?.includes(name) ?? false}
+                      onValueChange={(selected) =>
+                        setLocalOptions((current) => ({
+                          ...current,
+                          targetGroups: selected
+                            ? [...new Set([...(current.targetGroups || []), name])]
+                            : (current.targetGroups || []).filter((item) => item !== name)
+                        }))
+                      }
+                    >
+                      {name}
+                    </Checkbox>
+                  ))
+                ) : (
+                  <span className="text-sm text-default-500">暂无代理组</span>
+                )}
+              </div>
             </SettingItem>
           )}
         </>

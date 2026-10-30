@@ -133,7 +133,8 @@ describe('local migration', () => {
     expect(local.id).toBe('local')
     expect(profileConfig.current).toBe('local')
 
-    expect(existsSync(path.join(dataDir, 'local-config.yaml'))).toBe(true)
+    expect(existsSync(path.join(dataDir, 'profiles', 'local.yaml'))).toBe(true)
+    expect(existsSync(path.join(dataDir, 'local-config.yaml'))).toBe(false)
     expect(existsSync(path.join(dataDir, 'simple-config.yaml'))).toBe(false)
 
     const appConfig = yaml.parse(readFileSync(path.join(dataDir, 'config.yaml'), 'utf-8'))

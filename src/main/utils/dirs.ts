@@ -167,8 +167,7 @@ export function localConfigPath(): string {
 }
 
 export function localProfileConfigPath(id: string): string {
-  if (id === 'local') return localConfigPath()
-  return path.join(profilesDir(), `${id}.local.yaml`)
+  return profilePath(id)
 }
 
 export function localOutputPath(): string {

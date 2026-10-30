@@ -26,11 +26,7 @@ import {
   DEFAULT_MIHOMO_SKIP_AUTH_PREFIXES,
   getDefaultMihomoTunDevice
 } from '../../shared/appConfig'
-import {
-  defaultLocalDraft,
-  LEGACY_SIMPLE_PROFILE_ID,
-  LOCAL_PROFILE_ID
-} from '../../shared/local-config'
+import { LEGACY_SIMPLE_PROFILE_ID, LOCAL_PROFILE_ID } from '../../shared/local-config'
 import { stringify } from './yaml'
 import {
   defaultConfig,
@@ -156,17 +152,8 @@ async function initConfig(): Promise<void> {
       path: controledMihomoConfigPath(),
       content: defaultControledMihomoConfig,
       name: 'mihomo config'
-    },
-    {
-      path: localConfigPath(),
-      content: {
-        version: 2,
-        revision: 0,
-        draft: defaultLocalDraft(),
-        published: defaultLocalDraft()
-      },
-      name: 'local config'
     }
+    // Local profiles are stored as regular Mihomo YAML under profiles/.
   ]
 
   await Promise.all(

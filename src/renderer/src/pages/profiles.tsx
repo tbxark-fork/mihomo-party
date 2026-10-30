@@ -46,6 +46,7 @@ import SubStoreIcon from '@renderer/components/base/substore-icon'
 import useSWR from 'swr'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { parse } from 'yaml'
 import { subscribePluginFile, takePendingPluginFile } from '@renderer/utils/plugin-file-open'
 import { DEFAULT_USE_SUB_STORE } from '../../../shared/appConfig'
 
@@ -82,11 +83,40 @@ const Profiles: React.FC = () => {
   const localSourceIds = useMemo(
     () =>
       new Set(
-        [...(localConfig?.draft.sources || []), ...(localConfig?.published.sources || [])]
-          .map((source) => source.profileId)
-          .filter((id): id is string => Boolean(id))
+        items
+          .filter((item) => {
+            if (!localConfig) return false
+            const providers = parse(localConfig.draft.modules['proxy-providers'])
+            const proxies = parse(localConfig.draft.modules.proxies)
+            const nodePrefix = `[${item.name}] `
+            const isProviderSource =
+              providers &&
+              typeof providers === 'object' &&
+              !Array.isArray(providers) &&
+              (Object.hasOwn(providers, item.name) ||
+                Object.values(providers).some(
+                  (provider) =>
+                    provider &&
+                    typeof provider === 'object' &&
+                    !Array.isArray(provider) &&
+                    'url' in provider &&
+                    provider.url === item.url
+                ))
+            const isNodeSource =
+              Array.isArray(proxies) &&
+              proxies.some(
+                (proxy) =>
+                  proxy &&
+                  typeof proxy === 'object' &&
+                  !Array.isArray(proxy) &&
+                  typeof proxy.name === 'string' &&
+                  proxy.name.startsWith(nodePrefix)
+              )
+            return Boolean(isProviderSource || isNodeSource)
+          })
+          .map((item) => item.id)
       ),
-    [localConfig]
+    [items, localConfig]
   )
   const [showPluginImport, setShowPluginImport] = useState(false)
   const [pluginDropFile, setPluginDropFile] = useState<File | null>(null)

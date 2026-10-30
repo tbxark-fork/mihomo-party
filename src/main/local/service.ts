@@ -31,7 +31,12 @@ import {
 import { compileLocalConfig, type LocalSharedConfig } from './compiler'
 import { patchLocalDraft } from './patch'
 import { normalizeLocalProviderOptions } from './providers'
-import { attachLocalSourceToGroups, replaceLocalSource, resolveLocalDraft } from './subscriptions'
+import {
+  attachLocalSourceToGroups,
+  replaceLocalSource,
+  resolveLocalDraft,
+  setLocalSourceGroups
+} from './subscriptions'
 import {
   addLocalNodes,
   readLocalNodes,
@@ -268,7 +273,7 @@ export async function saveLocalDraft(draft: LocalDraft): Promise<LocalPreview> {
     )
     if (Object.values(removed).some((names) => names.size))
       nextDraft = cleanupLocalDraft(after, removed)
-    await saveLocalState({ ...state, draft: nextDraft })
+    await saveLocalState({ ...state, draft: nextDraft, published: structuredClone(nextDraft) })
     return compileLocalConfig(await resolveLocalDraft(nextDraft), shared)
   })
 }
@@ -582,8 +587,64 @@ export async function configureLocalSource(
     const item = await getProfileItem(profileId)
     if (!item) throw new Error('找不到订阅')
     const state = await getLocalState()
-    const existing = state.draft.sources.find((source) => source.profileId === profileId)
-    const published = state.published.sources.find((source) => source.profileId === profileId)
+    const inferProviderSource = (draft: LocalDraft): LocalSource | undefined => {
+      const providers = parse(draft.modules['proxy-providers'])
+      if (isRecord(providers)) {
+        const entry = Object.entries(providers).find(([name, value]) => {
+          if (!isRecord(value)) return false
+          return (
+            name === options?.providerName?.trim() ||
+            name === item.name ||
+            (Boolean(item.url) && value.url === item.url)
+          )
+        })
+        if (entry && isRecord(entry[1])) {
+          const override = isRecord(entry[1].override) ? entry[1].override : {}
+          return {
+            id: `profile-${profileId}`,
+            profileId,
+            name: entry[0],
+            mode: entry[1].type === 'inline' ? 'inline' : 'http',
+            prefix:
+              typeof override['additional-prefix'] === 'string'
+                ? override['additional-prefix']
+                : `[${entry[0]}] `,
+            interval: Number(entry[1].interval) || 3600,
+            url: typeof entry[1].url === 'string' ? entry[1].url : undefined,
+            providerOptions: entry[1],
+            proxies: []
+          }
+        }
+      }
+      const prefix = `[${item.name}] `
+      const nodes = parse(draft.modules.proxies)
+      if (Array.isArray(nodes)) {
+        const proxies = nodes
+          .filter(
+            (node): node is LocalObject =>
+              isRecord(node) && typeof node.name === 'string' && node.name.startsWith(prefix)
+          )
+          .map((node) => ({ ...node, name: String(node.name).slice(prefix.length) }))
+        if (proxies.length) {
+          return {
+            id: `profile-${profileId}`,
+            profileId,
+            name: item.name,
+            mode: 'extract',
+            prefix,
+            interval: 0,
+            proxies
+          }
+        }
+      }
+      return undefined
+    }
+    const existing =
+      state.draft.sources.find((source) => source.profileId === profileId) ||
+      inferProviderSource(state.draft)
+    const published =
+      state.published.sources.find((source) => source.profileId === profileId) ||
+      inferProviderSource(state.published)
     const previous = existing || published
     const names = new Set([
       ...state.draft.sources
@@ -617,16 +678,51 @@ export async function configureLocalSource(
       interval: previous?.interval ?? 3600,
       proxies: []
     }
-    const resolved = await resolveLocalDraft({ ...state.draft, sources: [source] })
+    const sourceDraft = {
+      ...state.draft,
+      sources: [
+        ...state.draft.sources.filter((candidate) => candidate.profileId !== profileId),
+        source
+      ]
+    }
+    if (!state.draft.sources.some((candidate) => candidate.profileId === profileId) && previous) {
+      const providers = parse(sourceDraft.modules['proxy-providers'])
+      if (isRecord(providers)) {
+        delete providers[previous.name]
+        sourceDraft.modules = { ...sourceDraft.modules, 'proxy-providers': stringify(providers) }
+      }
+    }
+    const resolved = await resolveLocalDraft(sourceDraft)
     const nextSource = resolved.sources[0]
     const update = async (draft: LocalDraft): Promise<LocalDraft> => {
-      const old = draft.sources.find((source) => source.profileId === profileId)
+      const old =
+        draft.sources.find((source) => source.profileId === profileId) ||
+        (previous && inferProviderSource(draft))
+      const base =
+        old && !draft.sources.some((candidate) => candidate.profileId === profileId)
+          ? {
+              ...draft,
+              sources: [
+                ...draft.sources.filter((candidate) => candidate.profileId !== profileId),
+                old
+              ],
+              modules: {
+                ...draft.modules,
+                'proxy-providers': (() => {
+                  const providers = parse(draft.modules['proxy-providers'])
+                  if (!isRecord(providers)) return draft.modules['proxy-providers']
+                  delete providers[old.name]
+                  return stringify(providers)
+                })()
+              }
+            }
+          : draft
       const oldResolved = old
-        ? (await resolveLocalDraft({ ...draft, sources: [old] })).sources[0]
+        ? (await resolveLocalDraft({ ...base, sources: [old] })).sources[0]
         : undefined
-      const next = replaceLocalSource(draft, oldResolved, nextSource)
-      return options?.targetGroups?.length
-        ? attachLocalSourceToGroups(next, nextSource, options.targetGroups)
+      const next = replaceLocalSource(base, oldResolved, nextSource)
+      return options?.targetGroups !== undefined
+        ? setLocalSourceGroups(next, oldResolved || nextSource, nextSource, options.targetGroups)
         : next
     }
     const result = await commitLocalState(state, {
@@ -682,7 +778,7 @@ export async function refreshLocalSource(id: string): Promise<LocalPreview> {
         item.id === id ? { ...item, proxies, updated: Date.now() } : item
       )
     }
-    await saveLocalState({ ...state, draft })
+    await saveLocalState({ ...state, draft, published: structuredClone(draft) })
     return compileLocalConfig(await resolveLocalDraft(draft), await getSharedConfig())
   })
 }
