@@ -115,7 +115,7 @@ export const ProviderFields: React.FC<{
               <SelectItem key="false">禁用</SelectItem>
             </Select>
           ) : (
-            <div className="[&>*]:!w-full">
+            <div className="*:w-full!">
               <NodeFieldEditor
                 field={field}
                 value={values[field.key]}
@@ -161,7 +161,7 @@ export const ProviderHeaders: React.FC<{
           labelPlacement="outside"
           placeholder="多个值每行一个"
           minRows={1}
-          className="min-w-0 flex-[2]"
+          className="min-w-0 flex-2"
           value={row.values}
           isDisabled={disabled}
           onValueChange={(values) =>

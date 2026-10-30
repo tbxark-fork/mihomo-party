@@ -15,7 +15,6 @@ import ProfileItem from '@renderer/components/profiles/profile-item'
 import PluginItem from '@renderer/components/plugins/plugin-item'
 import PluginInstallModal from '@renderer/components/plugins/plugin-install-modal'
 import EditInfoModal from '@renderer/components/profiles/edit-info-modal'
-import SubscriptionGroupsModal from '@renderer/components/local/subscription-groups-modal'
 import { useProfileConfig } from '@renderer/hooks/use-profile-config'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { usePluginConfig } from '@renderer/hooks/use-plugin-config'
@@ -72,7 +71,6 @@ const Profiles: React.FC = () => {
   const [sortedItems, setSortedItems] = useState(items)
   const [useProxy, setUseProxy] = useState(false)
   const [importItem, setImportItem] = useState<Partial<IProfileItem> | null>(null)
-  const [sourceGroupProfileId, setSourceGroupProfileId] = useState<string | null>(null)
   const [subStoreImporting, setSubStoreImporting] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [fileOver, setFileOver] = useState(false)
@@ -357,19 +355,12 @@ const Profiles: React.FC = () => {
           mode="import"
           item={importItem as IProfileItem}
           addProfileItem={addProfileItem}
-          onImported={(item, sourceMode) => {
+          onImported={() => {
             setUrl('')
-            if (sourceMode === 'group') setSourceGroupProfileId(item.id)
           }}
           onClose={() => {
             setImportItem(null)
           }}
-        />
-      )}
-      {sourceGroupProfileId && (
-        <SubscriptionGroupsModal
-          profileId={sourceGroupProfileId}
-          onClose={() => setSourceGroupProfileId(null)}
         />
       )}
       <div className="sticky profiles-sticky top-0 z-40 bg-background">

@@ -165,7 +165,6 @@ interface IpcApi {
     import('../../../shared/local-config').LocalPreview & { path?: string }
   >
   refreshLocalSource: (id: string) => Promise<import('../../../shared/local-config').LocalPreview>
-  attachLocalSubscriptionGroups: (profileId: string, groups: string[]) => Promise<void>
   removeLocalSource: (id: string) => Promise<import('../../../shared/local-config').LocalPreview>
   getFilePath: (ext: string[], title?: string, filterName?: string) => Promise<string[] | undefined>
   readTextFile: (filePath: string) => Promise<string>
@@ -368,7 +367,6 @@ export const {
   exportLocalConfig,
   refreshLocalSource,
   removeLocalSource,
-  attachLocalSubscriptionGroups,
   getFilePath,
   readTextFile,
   readImageFileDataURL,

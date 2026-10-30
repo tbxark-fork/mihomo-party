@@ -91,7 +91,6 @@ const validInvokeChannels = [
   'exportLocalConfig',
   'refreshLocalSource',
   'removeLocalSource',
-  'attachLocalSubscriptionGroups',
   'getFilePath',
   'readTextFile',
   'readImageFileDataURL',

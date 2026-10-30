@@ -193,7 +193,7 @@ const RuleEditorModal: React.FC<Props> = (props) => {
             )}
           </fieldset>
           {error && (
-            <div role="alert" className="text-sm text-danger break-words">
+            <div role="alert" className="text-sm text-danger wrap-break-word">
               {error}
             </div>
           )}

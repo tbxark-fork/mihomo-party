@@ -50,7 +50,7 @@ interface Props {
   mode?: 'edit' | 'import'
   updateProfileItem?: (item: IProfileItem) => Promise<void>
   addProfileItem?: (item: IProfileItem) => Promise<void>
-  onImported?: (item: IProfileItem, sourceMode?: LocalSubscriptionOptions['mode']) => void
+  onImported?: (item: IProfileItem) => void
   onClose: () => void
 }
 const EditInfoModal: React.FC<Props> = (props) => {
@@ -336,7 +336,7 @@ const EditInfoModal: React.FC<Props> = (props) => {
         }
         if (isImportMode) {
           const imported = await importProfile(updatedItem, options)
-          onImported?.(imported, options.mode)
+          onImported?.(imported)
         } else {
           await saveProfile(updatedItem, options)
           await addProfileUpdater(updatedItem)

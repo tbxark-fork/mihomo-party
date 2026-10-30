@@ -166,10 +166,6 @@ export function localConfigPath(): string {
   return path.join(dataDir(), 'local-config.yaml')
 }
 
-export function localProfileConfigPath(id: string): string {
-  return profilePath(id)
-}
-
 export function localOutputPath(): string {
   return path.join(dataDir(), 'local-config.generated.yaml')
 }

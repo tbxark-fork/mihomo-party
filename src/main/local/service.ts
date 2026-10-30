@@ -31,12 +31,7 @@ import {
 import { compileLocalConfig, type LocalSharedConfig } from './compiler'
 import { patchLocalDraft } from './patch'
 import { normalizeLocalProviderOptions } from './providers'
-import {
-  attachLocalSourceToGroups,
-  replaceLocalSource,
-  resolveLocalDraft,
-  setLocalSourceGroups
-} from './subscriptions'
+import { replaceLocalSource, resolveLocalDraft, setLocalSourceGroups } from './subscriptions'
 import {
   addLocalNodes,
   readLocalNodes,
@@ -730,29 +725,6 @@ export async function configureLocalSource(
       revision: state.revision + 1,
       draft: await update(state.draft),
       published: await update(state.published)
-    })
-    if (result.errors.length) throw new Error(result.errors.join('\n'))
-  })
-}
-
-export async function attachLocalSubscriptionGroups(
-  profileId: string,
-  targetGroups: string[]
-): Promise<void> {
-  await localWriteQueue.run(async () => {
-    const state = await getLocalState()
-    const source =
-      state.draft.sources.find((item) => item.profileId === profileId) ||
-      state.published.sources.find((item) => item.profileId === profileId)
-    if (!source) throw new Error('找不到订阅来源')
-    const resolved = (await resolveLocalDraft({ ...state.draft, sources: [source] })).sources[0]
-    const attach = (draft: LocalDraft): LocalDraft =>
-      attachLocalSourceToGroups(draft, resolved, targetGroups)
-    const result = await commitLocalState(state, {
-      ...state,
-      revision: state.revision + 1,
-      draft: attach(state.draft),
-      published: attach(state.published)
     })
     if (result.errors.length) throw new Error(result.errors.join('\n'))
   })

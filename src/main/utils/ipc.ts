@@ -161,8 +161,7 @@ import {
   publishLocalConfig,
   exportLocalConfig,
   refreshLocalSource,
-  removeLocalSource,
-  attachLocalSubscriptionGroups
+  removeLocalSource
 } from '../local/service'
 import { getImageDataURL } from './image'
 import { get as httpGet } from './chromeRequest'
@@ -349,7 +348,6 @@ const asyncHandlers: Record<string, AsyncFn> = {
   exportLocalConfig,
   refreshLocalSource,
   removeLocalSource,
-  attachLocalSubscriptionGroups,
   readTextFile,
   // Core
   restartCore,

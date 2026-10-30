@@ -339,7 +339,7 @@ const RuleProviderEditorModal: React.FC<Props> = (props) => {
             </Tabs>
           </fieldset>
           {error && (
-            <div role="alert" className="text-sm text-danger break-words">
+            <div role="alert" className="text-sm text-danger wrap-break-word">
               {error}
             </div>
           )}

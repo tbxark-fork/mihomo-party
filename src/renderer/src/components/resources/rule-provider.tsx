@@ -183,7 +183,7 @@ const RuleProvider: React.FC<{ editing?: boolean }> = (props) => {
         />
       )}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-divider pb-2">
-        <h4 className="min-w-0 break-words text-md">{t('resources.ruleProviders.title')}</h4>
+        <h4 className="min-w-0 wrap-break-word text-md">{t('resources.ruleProviders.title')}</h4>
         <div className="flex min-w-0 items-center gap-2">
           <Input
             size="sm"

@@ -21,7 +21,6 @@ import {
   mihomoCorePath,
   mihomoProfileWorkDir,
   mihomoWorkDir,
-  localProfileConfigPath,
   profileConfigPath,
   profilePath
 } from '../utils/dirs'
@@ -388,7 +387,6 @@ async function removeProfileItemSteps(id: string): Promise<IProfileItem | undefi
     })
     if (switched) await restartCore()
     if (existsSync(profilePath(id))) await rm(profilePath(id))
-    if (item && isLocalProfile(item)) await rm(localProfileConfigPath(id), { force: true })
     await removeProfileWorkDir(id)
     await updateProfileConfig((config) => {
       removedItem = config.items?.find((i) => i.id === id)

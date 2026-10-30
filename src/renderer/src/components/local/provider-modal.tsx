@@ -140,7 +140,7 @@ const ProviderModal: React.FC<Props> = ({ kind, name: editingName, onClose, onSa
             throw new Error('节点必须是对象列表')
           }
         } catch (error) {
-          toast.error(`Inline 内容格式错误: ${String(error)}`)
+          toast.error(`Inline 内容格式错误：${String(error)}`)
           return
         }
       }

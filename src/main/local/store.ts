@@ -6,11 +6,11 @@ import { BrowserWindow } from 'electron'
 import { atomicWriteFile, WriteQueue } from '../utils/safeFile'
 import { parse, stringify } from '../utils/yaml'
 import {
-  localProfileConfigPath,
   localConfigPath,
   localOutputPath,
   mihomoWorkConfigPath,
-  mihomoWorkDir
+  mihomoWorkDir,
+  profilePath
 } from '../utils/dirs'
 import {
   defaultLocalDraft,
@@ -106,16 +106,13 @@ export async function importLocalProfileContent(content: string): Promise<void> 
 
 export async function getLocalState(): Promise<LocalState> {
   const profileId = await activeLocalProfileId()
-  const statePath = localProfileConfigPath(profileId)
-  const legacyProfileStatePath = path.join(path.dirname(statePath), `${profileId}.local.yaml`)
+  const statePath = profilePath(profileId)
   const legacyPath = localConfigPath()
-  const readPath = existsSync(legacyProfileStatePath)
-    ? legacyProfileStatePath
-    : existsSync(statePath)
-      ? statePath
-      : profileId === 'local'
-        ? legacyPath
-        : statePath
+  const readPath = existsSync(statePath)
+    ? statePath
+    : profileId === 'local'
+      ? legacyPath
+      : statePath
   if (!existsSync(readPath)) {
     if (profileId !== 'local') {
       try {
@@ -149,11 +146,8 @@ export async function saveLocalState(state: LocalState): Promise<void> {
   const profileId = await activeLocalProfileId()
   const result = compileLocalConfig(await resolveLocalDraft(state.draft), await getSharedConfig())
   if (result.errors.length) throw new Error(result.errors.join('\n'))
-  await mkdir(path.dirname(localProfileConfigPath(profileId)), { recursive: true })
-  await atomicWriteFile(localProfileConfigPath(profileId), result.yaml, { encoding: 'utf8' })
-  await rm(path.join(path.dirname(localProfileConfigPath(profileId)), `${profileId}.local.yaml`), {
-    force: true
-  })
+  await mkdir(path.dirname(profilePath(profileId)), { recursive: true })
+  await atomicWriteFile(profilePath(profileId), result.yaml, { encoding: 'utf8' })
   await rm(localConfigPath(), { force: true })
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send('controledMihomoConfigUpdated')

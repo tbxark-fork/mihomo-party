@@ -240,7 +240,7 @@ const NodeModal: React.FC<Props> = ({ name, onClose, onSaved }) => {
             {error && (
               <div
                 role="alert"
-                className="mt-2 text-sm break-words whitespace-pre-wrap text-danger"
+                className="mt-2 text-sm wrap-break-word whitespace-pre-wrap text-danger"
               >
                 {error}
               </div>

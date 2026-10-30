@@ -140,7 +140,7 @@ const ProxyProvider: React.FC<{ editing?: boolean }> = ({ editing: editingProp }
         />
       )}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-divider pb-2">
-        <h4 className="min-w-0 break-words text-md">{t('resources.proxyProviders.title')}</h4>
+        <h4 className="min-w-0 wrap-break-word text-md">{t('resources.proxyProviders.title')}</h4>
         <div className="flex min-w-0 items-center gap-2">
           <Input
             size="sm"
@@ -204,7 +204,7 @@ const ProxyProvider: React.FC<{ editing?: boolean }> = ({ editing: editingProp }
               }
               divider={!provider.subscriptionInfo && index !== providers.length - 1}
             >
-              <div className="flex h-[32px] leading-[32px] text-foreground-500">
+              <div className="flex h-8 leading-8 text-foreground-500">
                 <div>{dayjs(provider.updatedAt).fromNow()}</div>
                 {provider.vehicleType === 'HTTP' && (
                   <Button
@@ -271,7 +271,7 @@ const ProxyProvider: React.FC<{ editing?: boolean }> = ({ editing: editingProp }
                   </div>
                 }
               >
-                <div className="h-[32px] leading-[32px] text-foreground-500">
+                <div className="h-8 leading-8 text-foreground-500">
                   {provider.subscriptionInfo.Expire
                     ? new Date(provider.subscriptionInfo.Expire * 1000).toLocaleDateString()
                     : t('profiles.neverExpire')}

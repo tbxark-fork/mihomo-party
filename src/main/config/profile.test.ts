@@ -91,10 +91,6 @@ vi.mock('../utils/dirs', () => ({
   },
   profilePath: (id: string) => join(testDir, 'profiles', `${id}.yaml`),
   localConfigPath: () => join(testDir, 'local-config.yaml'),
-  localProfileConfigPath: (id: string) =>
-    id === 'local'
-      ? join(testDir, 'local-config.yaml')
-      : join(testDir, 'profiles', `${id}.local.yaml`),
   overrideConfigPath: () => join(testDir, 'override.yaml'),
   overridePath: (id: string, ext: string) => join(testDir, 'overrides', `${id}.${ext}`)
 }))
