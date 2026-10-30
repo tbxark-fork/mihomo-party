@@ -21,7 +21,6 @@ import {
 import { toast } from '@renderer/components/base/toast'
 import React, { useEffect, useState } from 'react'
 import { useOverrideConfig } from '@renderer/hooks/use-override-config'
-import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { useProfileConfig } from '@renderer/hooks/use-profile-config'
 import { useSWRConfig } from 'swr'
 import {
@@ -30,8 +29,8 @@ import {
   getFilePath,
   readTextFile,
   getProfileImportInfo,
-  getSimpleConfig,
-  previewSimpleConfig,
+  getLocalConfig,
+  previewLocalConfig,
   addProfileItem as importProfile,
   updateProfileItem as saveProfile
 } from '@renderer/utils/ipc'
@@ -40,36 +39,26 @@ import { FaPlus } from 'react-icons/fa6'
 import { useTranslation } from 'react-i18next'
 import { isValidCron } from 'cron-validator'
 import SettingItem from '../base/base-setting-item'
-import type { SimpleObject, SimpleSubscriptionOptions } from '../../../../shared/simple-config'
-import SimpleProviderOptions from '../simple/simple-provider-options'
-import type { HeaderRow } from '../simple/provider-fields'
+import type { LocalObject, LocalSubscriptionOptions } from '../../../../shared/local-config'
+import ProviderOptions from '../local/provider-options'
+import type { HeaderRow } from '../local/provider-fields'
 
 interface Props {
   item: IProfileItem
   mode?: 'edit' | 'import'
   updateProfileItem?: (item: IProfileItem) => Promise<void>
-  addProfileItem?: (item: Partial<IProfileItem>) => Promise<void>
-  simpleModeOverride?: boolean
-  onImported?: (item: IProfileItem) => void
+  addProfileItem?: (item: IProfileItem) => Promise<void>
+  onImported?: (item: IProfileItem, sourceMode?: LocalSubscriptionOptions['mode']) => void
   onClose: () => void
 }
 const EditInfoModal: React.FC<Props> = (props) => {
-  const {
-    item,
-    mode = 'edit',
-    updateProfileItem,
-    addProfileItem,
-    simpleModeOverride,
-    onImported,
-    onClose
-  } = props
-  const { appConfig } = useAppConfig()
-  const simpleMode = simpleModeOverride ?? appConfig?.operationMode === 'simple'
+  const { item, mode = 'edit', updateProfileItem, addProfileItem, onImported, onClose } = props
   const { mutateProfileConfig } = useProfileConfig()
   const { mutate } = useSWRConfig()
-  const [simpleOptions, setSimpleOptions] = useState<SimpleSubscriptionOptions>({
+  const [localOptions, setLocalOptions] = useState<LocalSubscriptionOptions>({
     mode: 'group'
   })
+  const [isSourceProfile, setIsSourceProfile] = useState(mode === 'import')
   const [providerHeaders, setProviderHeaders] = useState<HeaderRow[]>([])
   const [outbounds, setOutbounds] = useState<string[]>(['DIRECT'])
   const [optionsLoaded, setOptionsLoaded] = useState(false)
@@ -79,11 +68,12 @@ const EditInfoModal: React.FC<Props> = (props) => {
   const [values, setValues] = useState({
     ...item
   })
-  const inputWidth = simpleMode
+  const isImportMode = mode === 'import'
+  const asSource = isImportMode || isSourceProfile
+  const inputWidth = asSource
     ? 'w-[65%] min-w-0'
     : 'w-[400px] md:w-[400px] lg:w-[600px] xl:w-[800px]'
   const { t } = useTranslation()
-  const isImportMode = mode === 'import'
   useEffect(() => {
     const url = values.url?.trim()
     if (!isImportMode || values.type !== 'remote' || !url || !/^https?:\/\//i.test(url)) return
@@ -139,12 +129,13 @@ const EditInfoModal: React.FC<Props> = (props) => {
     values.updateTimeout
   ])
   useEffect(() => {
-    if (!simpleMode || isImportMode) return
+    if (isImportMode) return
     let active = true
-    getSimpleConfig()
+    getLocalConfig()
       .then((state) => {
         if (!active) return
         const source = state.draft.sources.find((source) => source.profileId === item.id)
+        setIsSourceProfile(Boolean(source))
         const providerOptions = structuredClone(source?.providerOptions || {})
         const header = (providerOptions.header || {}) as Record<string, string[]>
         const customHeaders: HeaderRow[] = []
@@ -165,7 +156,7 @@ const EditInfoModal: React.FC<Props> = (props) => {
           }))
         delete providerOptions['age-secret-key']
         setProviderHeaders(customHeaders)
-        setSimpleOptions({
+        setLocalOptions({
           mode: source?.mode === 'extract' ? 'nodes' : 'group',
           prefix: source?.prefix,
           providerName: source?.name,
@@ -179,11 +170,11 @@ const EditInfoModal: React.FC<Props> = (props) => {
     return () => {
       active = false
     }
-  }, [simpleMode, isImportMode, item.id])
+  }, [isImportMode, item.id])
   useEffect(() => {
-    if (!simpleMode) return
+    if (!asSource) return
     let active = true
-    previewSimpleConfig()
+    previewLocalConfig()
       .then((preview) => {
         if (active) setOutbounds(preview.references.outbounds)
       })
@@ -193,19 +184,19 @@ const EditInfoModal: React.FC<Props> = (props) => {
     return () => {
       active = false
     }
-  }, [simpleMode])
+  }, [asSource])
   const customHome = values.customHome?.trim() || ''
   const validHome = !customHome || (/^https?:\/\//i.test(customHome) && URL.canParse(customHome))
   const canSave =
     validHome &&
-    (!simpleMode || isImportMode || optionsLoaded) &&
+    (!asSource || isImportMode || optionsLoaded) &&
     (!isImportMode ||
       (values.type === 'remote' ? Boolean(values.url?.trim()) : values.file != null))
 
   const onSave = async (): Promise<void> => {
     setSaving(true)
     try {
-      const updatedItem = simpleMode
+      const updatedItem = asSource
         ? values
         : {
             ...values,
@@ -215,8 +206,8 @@ const EditInfoModal: React.FC<Props> = (props) => {
                 !overrideItems.find((t) => t.id === i)?.global
             )
           }
-      if (simpleMode) {
-        const providerOptions: SimpleObject = { ...simpleOptions.providerOptions }
+      if (asSource) {
+        const providerOptions: LocalObject = { ...localOptions.providerOptions }
         const header: Record<string, string[]> = {}
         for (const row of providerHeaders) {
           if (!row.name.trim() && !row.values) continue
@@ -229,15 +220,18 @@ const EditInfoModal: React.FC<Props> = (props) => {
         }
         if (Object.keys(header).length) providerOptions.header = header
         else delete providerOptions.header
-        const options = { ...simpleOptions, providerOptions }
+        const options = {
+          ...localOptions,
+          providerOptions
+        }
         if (isImportMode) {
           const imported = await importProfile(updatedItem, options)
-          onImported?.(imported)
+          onImported?.(imported, options.mode)
         } else {
           await saveProfile(updatedItem, options)
           await addProfileUpdater(updatedItem)
         }
-        await mutate('getSimpleConfig')
+        await mutate('getLocalConfig')
       } else if (isImportMode) {
         if (!addProfileItem) throw new Error('Missing profile import handler')
         await addProfileItem(updatedItem)
@@ -245,13 +239,14 @@ const EditInfoModal: React.FC<Props> = (props) => {
         if (!updateProfileItem) throw new Error('Missing profile update handler')
         await updateProfileItem(updatedItem)
         await addProfileUpdater(updatedItem)
+        if (isSourceProfile) await mutate('getLocalConfig')
         await mihomoHotReloadConfig()
       }
       onClose()
     } catch (e) {
       toast.error(String(e))
     } finally {
-      if (simpleMode) mutateProfileConfig()
+      if (asSource) mutateProfileConfig()
       setSaving(false)
     }
   }
@@ -315,34 +310,34 @@ const EditInfoModal: React.FC<Props> = (props) => {
           onValueChange={(customHome) => setValues({ ...values, customHome })}
         />
       </SettingItem>
-      {simpleMode && (
+      {(isImportMode || isSourceProfile) && (
+        <SettingItem title={t('profiles.editInfo.source.title')}>
+          <Tabs
+            size="sm"
+            aria-label={t('profiles.editInfo.source.title')}
+            selectedKey={localOptions.mode}
+            onSelectionChange={(key) => {
+              setLocalOptions({
+                ...localOptions,
+                mode: key as LocalSubscriptionOptions['mode']
+              })
+            }}
+          >
+            <Tab key="group" title={t('profiles.editInfo.source.group')} />
+            <Tab key="nodes" title={t('profiles.editInfo.source.nodes')} />
+          </Tabs>
+        </SettingItem>
+      )}
+      {asSource && (
         <>
-          <SettingItem title="导入方式">
-            <Tabs
-              size="sm"
-              aria-label="导入方式"
-              selectedKey={simpleOptions.mode}
-              onSelectionChange={(mode) => {
-                setSimpleOptions({
-                  ...simpleOptions,
-                  mode: mode as SimpleSubscriptionOptions['mode']
-                })
-              }}
-            >
-              <Tab key="group" title="整份订阅" />
-              <Tab key="nodes" title="独立节点" />
-            </Tabs>
-          </SettingItem>
-          {simpleOptions.mode === 'group' && (
+          {localOptions.mode === 'group' && (
             <SettingItem title="引用名称">
               <Input
                 size="sm"
                 className={cn(inputWidth)}
-                value={simpleOptions.providerName ?? ''}
+                value={localOptions.providerName ?? ''}
                 placeholder={values.name}
-                onValueChange={(providerName) =>
-                  setSimpleOptions({ ...simpleOptions, providerName })
-                }
+                onValueChange={(providerName) => setLocalOptions({ ...localOptions, providerName })}
               />
             </SettingItem>
           )}
@@ -511,7 +506,7 @@ const EditInfoModal: React.FC<Props> = (props) => {
           </SettingItem>
         </>
       )}
-      {!simpleMode && (
+      {!asSource && values.type !== undefined && (
         <SettingItem title={t('profiles.editInfo.override.title')}>
           <div>
             {overrideItems
@@ -584,7 +579,7 @@ const EditInfoModal: React.FC<Props> = (props) => {
       size="5xl"
       classNames={{
         backdrop: 'top-[48px]',
-        base: simpleMode
+        base: asSource
           ? 'w-[min(720px,calc(100vw-32px))] max-h-[min(680px,calc(100dvh-96px))]'
           : 'w-[600px] md:w-[600px] lg:w-[800px] xl:w-[1024px]'
       }}
@@ -597,26 +592,24 @@ const EditInfoModal: React.FC<Props> = (props) => {
         <ModalHeader className="flex app-drag">
           {isImportMode ? t('profiles.import') : t('profiles.editInfo.title')}
         </ModalHeader>
-        <ModalBody className={simpleMode ? 'pt-0' : undefined}>
-          {simpleMode ? (
-            <SimpleProviderOptions
-              values={simpleOptions.providerOptions || {}}
+        <ModalBody className={asSource ? 'pt-0' : undefined}>
+          {asSource ? (
+            <ProviderOptions
+              values={localOptions.providerOptions || {}}
               prefix={
-                simpleOptions.prefix ?? `[${simpleOptions.providerName || values.name || '订阅'}] `
+                localOptions.prefix ?? `[${localOptions.providerName || values.name || '订阅'}] `
               }
-              onPrefixChange={(prefix) => setSimpleOptions({ ...simpleOptions, prefix })}
+              onPrefixChange={(prefix) => setLocalOptions({ ...localOptions, prefix })}
               remote={values.type === 'remote'}
-              group={simpleOptions.mode === 'group'}
+              group={localOptions.mode === 'group'}
               outbounds={outbounds}
               headers={providerHeaders}
               disabled={saving || (!isImportMode && !optionsLoaded)}
-              onChange={(providerOptions) =>
-                setSimpleOptions({ ...simpleOptions, providerOptions })
-              }
+              onChange={(providerOptions) => setLocalOptions({ ...localOptions, providerOptions })}
               onHeadersChange={setProviderHeaders}
             >
               {subscriptionFields}
-            </SimpleProviderOptions>
+            </ProviderOptions>
           ) : (
             subscriptionFields
           )}
